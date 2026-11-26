@@ -614,17 +614,26 @@ async function devices(){return (await api('/me/player/devices'))?.devices||[]}
 async function pickDevice(){
   const list=await devices();
   const chosen=store.get('spDevice');
+  if(IOS){
+    const phone=list.find(d=>d.id===chosen)||list.find(d=>d.type==='Smartphone'&&d.is_active)||list.find(d=>d.type==='Smartphone');
+    return phone||{none:true,others:list};
+  }
   return list.find(d=>d.id===chosen)
-    ||(!IOS&&sdkDevice&&list.find(d=>d.id===sdkDevice))
+    ||(sdkDevice&&list.find(d=>d.id===sdkDevice))
     ||list.find(d=>d.is_active)
-    ||(IOS&&list.find(d=>d.type==='Smartphone'))
     ||(sdkDevice&&{id:sdkDevice,name:'Crate'})
     ||list[0]||null;
 }
-function wakeSheet(album){
-  C.openSheet(`<h4>Wake up Spotify</h4><p class="sp-note">Spotify isn’t running anywhere Crate can reach. Open the Spotify app on this ${IOS?'phone':'device'} for a moment, then come back to Crate and tap Play again. It will keep playing while you browse.</p>
-  <div class="row2"><a class="btn spot" href="${esc(album?.url||'https://open.spotify.com')}" target="_blank" rel="noopener">Open Spotify</a><button class="btn ghost" id="spClose">Close</button></div>`);
+function wakeSheet(album,others=[]){
+  C.openSheet(`<h4>Wake up Spotify</h4><p class="sp-note">${IOS?'Your iPhone only shows up to Crate while the Spotify app is awake. Tap <b style="color:var(--ink)">Open Spotify</b>, wait until the album appears, then swipe back to Crate and tap Play again. After that, Crate controls it while you browse.':'Spotify isn’t running anywhere Crate can reach. Open Spotify on a device for a moment, then come back and tap Play again.'}</p>
+  <a class="btn spot" href="${esc(album?.url||'https://open.spotify.com')}" target="_blank" rel="noopener" style="margin-top:12px">Open Spotify</a>
+  ${others.length?`<p class="sp-note" style="margin-top:16px">Or play it on:</p><ul class="devlist">${others.map(d=>`<li><button data-id="${esc(d.id)}"><span>${esc(d.name)}<br><small>${esc(d.type)}</small></span></button></li>`).join('')}</ul>`:''}
+  <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
   $('#spClose').onclick=C.closeSheet;
+  document.querySelectorAll('.devlist button').forEach(b=>b.onclick=async()=>{
+    C.closeSheet();
+    try{await api('/me/player/play?device_id='+encodeURIComponent(b.dataset.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});C.toast('Playing on '+b.textContent.trim().split('\n')[0]);setTimeout(poll,800)}catch(e){C.toast(e.message)}
+  });
 }
 
 /* ---------- play ---------- */
@@ -637,7 +646,7 @@ async function playRecord(x){
   try{
     let dev=await pickDevice();
     if(!dev&&!IOS&&sdkPlayer){await new Promise(r=>setTimeout(r,1500));dev=await pickDevice()}
-    if(!dev){wakeSheet(album);return}
+    if(!dev||dev.none){wakeSheet(album,dev?.others||[]);return}
     await api('/me/player/play?device_id='+encodeURIComponent(dev.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});
     C.toast('Playing on '+(dev.name||'Spotify'));
     lastRecord=x;setTimeout(poll,800);setTimeout(poll,2500);

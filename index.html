@@ -213,7 +213,7 @@ dt{color:var(--dim)}dd{margin:0}
 <script>
 {
 /* auto-update: reload when a newer version is published */
-const BUILD='1795718157';
+const BUILD='1795718580';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -471,6 +471,7 @@ async function openDetail(x){
     ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}</dl>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
     <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
+    <button class="hint" data-rematch="${esc(x.inst)}" style="background:none;border:0;padding:8px 0;margin:4px 0 0;text-decoration:underline;color:var(--dim)">Wrong album? Pick a different Spotify version</button>
     <div class="row2" style="margin-top:10px"><a class="btn ghost" href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Open on Discogs</a><button class="btn ghost" id="close">Close</button></div>
   </div></div>`;
   $('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false');
@@ -610,30 +611,41 @@ function startPlayer(){
 
 /* ---------- finding albums ---------- */
 const norm=t=>String(t||'').toLowerCase().replace(/\s*[\[(].*?[\])]/g,'').replace(/&/g,'and').replace(/[^a-z0-9]+/g,' ').trim();
-async function findAlbum(x){
+const toks=t=>norm(t).split(' ').filter(w=>w&&!['the','a','an','and','of'].includes(w));
+const overlap=(a,b)=>{const A=toks(a),B=new Set(toks(b));if(!A.length||!B.size)return 0;return A.filter(w=>B.has(w)).length/Math.max(A.length,B.size)};
+function scoreAlbum(x,a,artist,various){
+  const tn=norm(a.name),xt=norm(x.title),an=norm((a.artists||[]).map(z=>z.name).join(' ')),xa=norm(artist);
+  let t=0,ar=0;
+  if(tn===xt)t=5;else if(tn&&xt&&(tn.startsWith(xt)||xt.startsWith(tn)))t=3;else{const o=overlap(x.title,a.name);t=o>=.6?3:o>=.3?1:0}
+  if(various||(an&&xa&&(an.includes(xa)||xa.includes(an))))ar=4;else{const o=overlap(artist,(a.artists||[]).map(z=>z.name).join(' '));ar=o>=.5?3:0}
+  let sc=t+ar+(a.album_type==='album'?1:0)+(x.year&&a.release_date?.startsWith(String(x.year))?1:0);
+  return {sc,t,ar};
+}
+const hitOf=a=>({uri:a.uri,url:a.external_urls?.spotify,name:a.name,artist:(a.artists||[]).map(z=>z.name).join(', '),year:(a.release_date||'').slice(0,4),img:(a.images||[]).slice(-1)[0]?.url||'',type:a.album_type});
+async function findAlbum(x,force){
   const cache=store.get('spAlbums')||{};
-  if(cache[x.id])return cache[x.id];
-  const artist=x.artist.split(', ')[0],various=/^various/i.test(artist);
-  const tries=[various?`album:${norm(x.title)}`:`album:${norm(x.title)} artist:${norm(artist)}`,`${various?'':artist+' '}${x.title}`];
-  let best=null,bestScore=-1;
+  if(cache[x.id]&&!force)return cache[x.id];
+  const artist=x.artist.split(', ')[0].replace(/\s*\(\d+\)$/,''),various=/^various/i.test(artist);
+  const tries=[various?`album:${norm(x.title)}`:`album:${norm(x.title)} artist:${norm(artist)}`,`${various?'':artist+' '}${norm(x.title)}`,norm(x.title)];
+  if(!various)tries.push(artist);
+  const seen=new Map();
   for(const q of tries){
-    const res=await api('/search?type=album&limit=10&q='+encodeURIComponent(q));
-    for(const a of res?.albums?.items||[]){
-      if(!a)continue;
-      const tn=norm(a.name),xt=norm(x.title),an=norm(a.artists?.map(z=>z.name).join(' ')),xa=norm(artist);
-      let sc=0;
-      if(tn===xt)sc+=5;else if(tn&&xt&&(tn.startsWith(xt)||xt.startsWith(tn)))sc+=3;else if(xt&&tn.includes(xt))sc+=2;else continue;
-      if(various||an.includes(xa)||xa.includes(an))sc+=4;
-      if(a.album_type==='album')sc+=1;
-      if(x.year&&a.release_date?.startsWith(String(x.year)))sc+=1;
-      if(sc>bestScore){bestScore=sc;best=a}
-    }
-    if(bestScore>=8)break;
+    let res;try{res=await api('/search?type=album&limit=10&q='+encodeURIComponent(q))}catch(e){if(seen.size)break;throw e}
+    for(const a of res?.albums?.items||[]){if(!a||seen.has(a.uri))continue;seen.set(a.uri,{a,...scoreAlbum(x,a,artist,various)})}
+    const top=[...seen.values()].sort((p,q)=>q.sc-p.sc)[0];
+    if(!force&&top&&top.t>=3&&top.ar>=3)break;
   }
-  if(!best||bestScore<4)return null;
-  const hit={uri:best.uri,url:best.external_urls?.spotify,name:best.name};
-  cache[x.id]=hit;store.set('spAlbums',cache);
-  return hit;
+  const ranked=[...seen.values()].sort((p,q)=>q.sc-p.sc);
+  const top=ranked[0];
+  if(!force&&top&&top.t>=3&&top.ar>=3){const hit=hitOf(top.a);cache[x.id]=hit;store.set('spAlbums',cache);return hit}
+  return {pick:true,candidates:ranked.slice(0,8).map(r=>hitOf(r.a))};
+}
+function pickSheet(x,cands,onPick){
+  C.openSheet(`<h4>Which one is it?</h4><p class="sp-note">Spotify doesn’t have an exact match for <b style="color:var(--ink)">${esc(x.title)}</b> by ${esc(x.artist)}. Pick the closest version; Crate will remember it.</p>
+  ${cands.length?`<ul class="devlist picks">${cands.map((c,i)=>`<li><button data-i="${i}" style="justify-content:flex-start;gap:12px;padding:8px 10px">${c.img?`<img src="${esc(c.img)}" alt="" style="width:48px;height:48px;border-radius:4px;object-fit:cover;flex:none">`:''}<span>${esc(c.name)}<br><small>${esc(c.artist)}${c.year?' · '+esc(c.year):''}${c.type&&c.type!=='album'?' · '+esc(c.type):''}</small></span></button></li>`).join('')}</ul>`:'<p class="sp-note">Spotify didn’t return anything for this record. It may not be on Spotify.</p>'}
+  <div class="row2"><a class="btn ghost" href="${esc(C.spotifyURL(x))}" target="_blank" rel="noopener">Search in Spotify</a><button class="btn ghost" id="spClose">Close</button></div>`);
+  $('#spClose').onclick=C.closeSheet;
+  document.querySelectorAll('.picks button').forEach(b=>b.onclick=()=>{const c=cands[+b.dataset.i];const cache=store.get('spAlbums')||{};cache[x.id]=c;store.set('spAlbums',cache);C.closeSheet();onPick(c)});
 }
 
 /* ---------- devices ---------- */
@@ -670,7 +682,11 @@ async function playRecord(x){
   C.toast('Finding “'+x.title+'” on Spotify…');
   let album;
   try{album=await findAlbum(x)}catch(e){store.set('spLastErr','search '+(e.status||'')+' '+e.message);C.toast('Spotify search failed: '+e.message);return}
-  if(!album){C.toast('Couldn’t find this one on Spotify. Opening a search instead.');window.open(C.spotifyURL(x),'_blank');return}
+  if(album.pick){pickSheet(x,album.candidates,c=>playAlbum(x,c));return}
+  return playAlbum(x,album);
+}
+async function playAlbum(x,album){
+  if(sdkPlayer)try{sdkPlayer.activateElement()}catch(e){}
   try{
     let dev=await pickDevice();
     if((!dev||dev.none)&&sdkPlayer&&!sdkDevice){for(let i=0;i<6&&!sdkDevice;i++)await new Promise(r=>setTimeout(r,500));dev=await pickDevice()}
@@ -686,7 +702,9 @@ async function playRecord(x){
   }
 }
 let lastRecord=null;
-document.addEventListener('click',e=>{
+document.addEventListener('click',async e=>{
+  const rm=e.target.closest('[data-rematch]');
+  if(rm){e.preventDefault();if(!connected()){openConnect();return}const x=C.byInst(rm.dataset.rematch);if(!x)return;C.toast('Looking up versions…');try{const r=await findAlbum(x,true);pickSheet(x,r.candidates||[],c=>playAlbum(x,c))}catch(err){C.toast(err.message)}return}
   const a=e.target.closest('a.spot[data-inst]');
   if(!a)return;
   const x=C.byInst(a.dataset.inst);if(!x)return;

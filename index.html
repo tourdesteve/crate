@@ -650,9 +650,11 @@ async function playRecord(x){
 let lastRecord=null;
 document.addEventListener('click',e=>{
   const a=e.target.closest('a.spot[data-inst]');
-  if(!a||!connected())return;
+  if(!a)return;
   const x=C.byInst(a.dataset.inst);if(!x)return;
-  e.preventDefault();playRecord(x);
+  e.preventDefault();
+  if(!connected()){openConnect();return}
+  playRecord(x);
 },true);
 
 /* ---------- now playing bar ---------- */
@@ -707,7 +709,7 @@ async function openConnect(){
     $('#spDev').onclick=deviceSheet;
     $('#spOut').onclick=()=>{sp={clientId:sp.clientId};save();store.del('spDevice');if(sdkPlayer){sdkPlayer.disconnect();sdkPlayer=null;window.__spLoading=0}state=null;renderBar();updateUI();C.closeSheet();C.toast('Spotify disconnected')};
   }else{
-    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Play albums from your collection with Spotify Premium${IOS?', using the Spotify app on this phone as the speaker':''}.</p>
+    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Connect once so the Play buttons play albums with your Spotify Premium${IOS?', using the Spotify app on this phone as the speaker':''}.</p>
     <label class="field"><span>Spotify Client ID</span><input id="spCid" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(clientId())}" placeholder="From your Spotify developer app"></label>
     <button class="btn spot" id="spGo">Connect Spotify</button>
     <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);

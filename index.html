@@ -211,9 +211,9 @@ let all=[],view=[],folders={},cur=0,mode=store.get('view')||'shelf',creds=store.
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 
 async function api(path,attempt=0){
-  const headers={};
-  if(creds.token)headers.Authorization='Discogs token='+creds.token;
-  const r=await fetch(API+path,{headers});
+  const url=API+path+(creds.token?(path.includes('?')?'&':'?')+'token='+encodeURIComponent(creds.token):'');
+  let r;
+  try{r=await fetch(url)}catch(e){throw new Error(creds.token?'Discogs didn’t accept that token. Copy it again from Discogs → Settings → Developers (or leave it blank if your collection is public).':'Couldn’t reach Discogs. Check your connection and try again.')}
   if(r.status===429&&attempt<4){toast('Discogs asked us to slow down, waiting…');await sleep(20000*(attempt+1));return api(path,attempt+1)}
   if(!r.ok){let m='';try{m=(await r.json()).message}catch(e){}throw new Error(r.status===401||r.status===403?'That collection is private. Add a personal access token.':r.status===404?'Couldn’t find that username on Discogs.':(m||'Discogs returned an error ('+r.status+').'))}
   return r.json();
@@ -258,7 +258,7 @@ async function load(force){
     err.textContent='';boot();if(force)toast('Collection refreshed');
   }catch(e){
     if(!$('#app').classList.contains('hidden'))toast(e.message);
-    else err.textContent=e.message.includes('Failed to fetch')?'Couldn’t reach Discogs. Check your connection and try again.':e.message;
+    else err.textContent=e.message;
   }finally{$('#go').disabled=false;prog.classList.add('hidden')}
 }
 

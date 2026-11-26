@@ -125,6 +125,8 @@ dt{color:var(--dim)}dd{margin:0}
 .tracks .p{color:var(--dim)}.tracks .d{color:var(--dim);font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:10px;margin-top:16px}
 .row2>*{flex:1;display:grid;place-items:center;text-decoration:none}
+.spot{background:#1db954!important;color:#06130a!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:700}
+.spot svg{color:#06130a}
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeB));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
@@ -186,6 +188,7 @@ dt{color:var(--dim)}dd{margin:0}
     <div class="navrow">
       <button class="icon" id="prev" aria-label="Previous record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="btn ghost" id="openCur" style="width:auto;padding:0 20px;height:44px">Details</button>
+      <a class="btn spot" id="playCur" href="#" target="_blank" rel="noopener" style="width:auto;padding:0 18px;height:44px">Play</a>
       <button class="icon" id="next" aria-label="Next record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
     <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Jump through collection"><div class="lbl"><span id="scrubA"></span><span id="scrubB"></span></div></div>
@@ -206,6 +209,8 @@ const store={get(k){try{return JSON.parse(localStorage.getItem('crate.'+k))}catc
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const cleanName=n=>String(n||'').replace(/\s\(\d+\)$/,'');
 const detailCache={};
+const spotifyURL=x=>{const a=x.artist.split(', ')[0].replace(/^various$/i,''),t=x.title.replace(/\s*[\[(][^)\]]*(remaster|edition|deluxe|reissue|anniversary)[^)\]]*[)\]]/ig,'');return 'https://open.spotify.com/search/'+encodeURIComponent((a+' '+t).trim())};
+const SPOTIFY_ICON='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M6.5 9.2c3.8-1.1 8-.8 11.2 1M7.2 12.4c3.1-.9 6.4-.6 9.2.9M7.8 15.4c2.4-.6 4.9-.4 7 .7" stroke="#1db954" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>';
 let all=[],view=[],folders={},cur=0,mode=store.get('view')||'shelf',creds=store.get('creds')||{};
 
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
@@ -348,6 +353,7 @@ function setCur(i){
   document.querySelectorAll('.slot.on').forEach(e=>e.classList.remove('on'));
   const el=$('#flow').children[i-base];if(el)el.classList.add('on');
   store.set('pos',x.inst);
+  const pc=$('#playCur');pc.href=spotifyURL(x);pc.innerHTML=SPOTIFY_ICON+'Play';pc.setAttribute('aria-label','Play '+x.title+' on Spotify');
 }
 let raf=0;
 function tilt(){
@@ -436,7 +442,8 @@ async function openDetail(x){
     ${x.added?`<dt>Added</dt><dd>${esc(new Date(x.added).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}))}</dd>`:''}
     ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}</dl>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
-    <div class="row2"><a class="btn" href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Open on Discogs</a><button class="btn ghost" id="close">Close</button></div>
+    <a class="btn spot" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
+    <div class="row2" style="margin-top:10px"><a class="btn ghost" href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Open on Discogs</a><button class="btn ghost" id="close">Close</button></div>
   </div></div>`;
   $('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false');
   $('#close').onclick=closeDetail;

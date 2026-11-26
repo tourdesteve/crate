@@ -632,7 +632,7 @@ async function playRecord(x){
   if(sdkPlayer&&!IOS)try{sdkPlayer.activateElement()}catch(e){}
   C.toast('Finding “'+x.title+'” on Spotify…');
   let album;
-  try{album=await findAlbum(x)}catch(e){C.toast(e.message);return}
+  try{album=await findAlbum(x)}catch(e){store.set('spLastErr','search '+(e.status||'')+' '+e.message);C.toast('Spotify search failed: '+e.message);return}
   if(!album){C.toast('Couldn’t find this one on Spotify. Opening a search instead.');window.open(C.spotifyURL(x),'_blank');return}
   try{
     let dev=await pickDevice();
@@ -642,6 +642,7 @@ async function playRecord(x){
     C.toast('Playing on '+(dev.name||'Spotify'));
     lastRecord=x;setTimeout(poll,800);setTimeout(poll,2500);
   }catch(e){
+    store.set('spLastErr',(e.status||'')+' '+(e.reason||'')+' '+e.message);
     if(e.reason==='NO_ACTIVE_DEVICE'||e.status===404)wakeSheet(album);
     else if(e.reason==='PREMIUM_REQUIRED')C.toast('This needs Spotify Premium');
     else C.toast(e.message);
@@ -704,9 +705,11 @@ async function openConnect(){
   if(connected()){
     let me=null;try{me=await api('/me')}catch(e){}
     C.openSheet(`<h4>Spotify</h4><p class="sp-note">Connected${me?' as <b style="color:var(--ink)">'+esc(me.display_name||me.id)+'</b>':''}. The green Play buttons now play albums ${IOS?'through the Spotify app on this phone while you stay in Crate':'right here in Crate'}.</p>
+    <button class="btn spot" id="spDiag">Check connection</button><pre id="diagOut" class="sp-note" style="white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);border-radius:12px;padding:12px;display:none"></pre>
     <div class="row2"><button class="btn ghost" id="spDev">Choose speaker</button><button class="btn ghost" id="spOut">Disconnect</button></div>
     <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
     $('#spDev').onclick=deviceSheet;
+    $('#spDiag').onclick=runDiag;
     $('#spOut').onclick=()=>{sp={clientId:sp.clientId};save();store.del('spDevice');if(sdkPlayer){sdkPlayer.disconnect();sdkPlayer=null;window.__spLoading=0}state=null;renderBar();updateUI();C.closeSheet();C.toast('Spotify disconnected')};
   }else{
     C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Connect once so the Play buttons play albums with your Spotify Premium${IOS?', using the Spotify app on this phone as the speaker':''}.</p>
@@ -716,6 +719,18 @@ async function openConnect(){
     $('#spGo').onclick=()=>{const v=$('#spCid').value.trim();if(!/^[0-9a-f]{32}$/i.test(v)){C.toast('That doesn’t look like a Client ID');return}sp.clientId=v;save();login()};
   }
   $('#spClose').onclick=C.closeSheet;
+}
+async function runDiag(){
+  const out=$('#diagOut');out.style.display='block';const L=[];const w=t=>{L.push(t);out.textContent=L.join('\n')};
+  w('Device: '+(IOS?'iPhone/iPad':'computer')+(navigator.standalone?' (Home Screen app)':''));
+  try{await token();w('✓ Signed in to Spotify')}catch(e){w('✗ Sign-in: '+e.message);return}
+  try{const me=await api('/me');w('✓ Account: '+(me.display_name||me.id)+(me.product?' · plan: '+me.product:''))}catch(e){w('✗ Account: '+e.message+(e.status?' ('+e.status+')':''))}
+  try{const d=await devices();w((d.length?'✓':'✗')+' Spotify devices awake: '+(d.map(x=>x.name+(x.is_active?' (active)':'')).join(', ')||'none'))}catch(e){w('✗ Devices: '+e.message+' ('+e.status+')')}
+  if(!IOS)w((sdkDevice?'✓':'✗')+' In-browser player: '+(sdkDevice?'ready':(sdkPlayer?'starting / not ready':'not loaded')));
+  const x=C.current;
+  if(x){try{store.set('spAlbums',{});const a=await findAlbum(x);w(a?'✓ Found “'+a.name+'” for '+x.title:'✗ No Spotify match for '+x.title)}catch(e){w('✗ Search: '+e.message+' ('+e.status+')')}}
+  try{const st=await api('/me/player');w('Now: '+(st?.item?(st.is_playing?'playing ':'paused ')+st.item.name+' on '+st.device?.name:'nothing playing'))}catch(e){w('✗ Player: '+e.message+' ('+e.status+')')}
+  w('Last play error: '+(store.get('spLastErr')||'none'));
 }
 $('#spBtn').onclick=openConnect;
 function updateUI(){$('#spBtn').style.color=connected()?'#1db954':''}

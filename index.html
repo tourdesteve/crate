@@ -127,6 +127,7 @@ dt{color:var(--dim)}dd{margin:0}
 .row2>*{flex:1;display:grid;place-items:center;text-decoration:none}
 .spot{background:#1db954!important;color:#06130a!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:700}
 .spot svg{color:#06130a}
+.hasbar .toast{bottom:calc(96px + var(--safeB))}
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeB));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
@@ -155,6 +156,7 @@ dt{color:var(--dim)}dd{margin:0}
     <div class="toprow">
       <h2>Crate<small id="count"></small></h2>
       <button class="icon" id="shuffle" title="Pick something to play" aria-label="Pick a random record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
+      <button class="icon" id="spBtn" title="Spotify" aria-label="Spotify connection"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 9.6c3.3-.9 6.9-.6 9.6.9M7.7 12.6c2.7-.7 5.5-.5 7.9.8M8.2 15.4c2.1-.5 4.2-.3 6 .6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></button>
       <button class="icon" id="refresh" title="Reload from Discogs" aria-label="Reload from Discogs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></button>
       <button class="icon" id="logout" title="Switch account" aria-label="Switch account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
     </div>
@@ -213,6 +215,7 @@ const spotifyURL=x=>{const a=x.artist.split(', ')[0].replace(/^various$/i,''),t=
 const SPOTIFY_ICON='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M6.5 9.2c3.8-1.1 8-.8 11.2 1M7.2 12.4c3.1-.9 6.4-.6 9.2.9M7.8 15.4c2.4-.6 4.9-.4 7 .7" stroke="#1db954" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>';
 let all=[],view=[],folders={},cur=0,mode=store.get('view')||'shelf',creds=store.get('creds')||{};
 
+window.Crate={byInst:i=>all.find(x=>String(x.inst)===String(i)),get current(){return view[cur]},toast:m=>toast(m),esc,store,$,spotifyURL,openSheet:h=>{$('#panel').innerHTML='<div class="grab"></div>'+h;$('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false')},closeSheet:()=>closeDetail()};
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 
 async function api(path,attempt=0){
@@ -353,7 +356,7 @@ function setCur(i){
   document.querySelectorAll('.slot.on').forEach(e=>e.classList.remove('on'));
   const el=$('#flow').children[i-base];if(el)el.classList.add('on');
   store.set('pos',x.inst);
-  const pc=$('#playCur');pc.href=spotifyURL(x);pc.innerHTML=SPOTIFY_ICON+'Play';pc.setAttribute('aria-label','Play '+x.title+' on Spotify');
+  const pc=$('#playCur');pc.href=spotifyURL(x);pc.innerHTML=SPOTIFY_ICON+'Play';pc.setAttribute('aria-label','Play '+x.title+' on Spotify');pc.dataset.inst=x.inst;
 }
 let raf=0;
 function tilt(){
@@ -442,7 +445,7 @@ async function openDetail(x){
     ${x.added?`<dt>Added</dt><dd>${esc(new Date(x.added).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}))}</dd>`:''}
     ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}</dl>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
-    <a class="btn spot" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
+    <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
     <div class="row2" style="margin-top:10px"><a class="btn ghost" href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Open on Discogs</a><button class="btn ghost" id="close">Close</button></div>
   </div></div>`;
   $('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false');
@@ -480,5 +483,244 @@ $('#loginForm').addEventListener('submit',e=>{e.preventDefault();creds={user:$('
 if(creds.user||creds.token){$('#user').value=creds.user||'';const c=store.get('cache');if(c&&c.user===creds.user){all=c.items;folders=c.folders||{};boot();const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p)}else load(true)}
 }
 </script>
+<style>
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;align-items:center;gap:10px;padding:10px 12px calc(10px + var(--safeB));background:#121418ee;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+#bar.hidden{display:none}
+#bar img,#bar .noart{width:48px;height:48px;border-radius:4px;flex:none;object-fit:cover;background:var(--panel)}
+#bar .info{flex:1;line-height:1.25;overflow:hidden}
+#bar .info b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .info span{display:block;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .dev{font-size:12px;color:#1db954;background:none;border:0;padding:0;text-align:left;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar .ctl{width:44px;height:44px;border:0;background:none;display:grid;place-items:center;flex:none}
+#bar .ctl svg{width:22px;height:22px}
+#bar .ctl.big{background:var(--ink);color:var(--bg);border-radius:50%}
+.hasbar #grid,.hasbar #stats{padding-bottom:calc(110px + var(--safeB))}
+.hasbar .scrub{padding-bottom:calc(100px + var(--safeB))}
+.devlist{list-style:none;padding:0;margin:12px 0}
+.devlist button{width:100%;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 14px;margin-bottom:8px;text-align:left}
+.devlist button.on{border-color:#1db954;color:#1db954}
+.devlist small{color:var(--dim)}
+.sp-note{font-size:14px;color:var(--dim);line-height:1.5}
+@media(max-width:420px){#bar .prevb{display:none}}
+</style>
+<div id="bar" class="hidden" aria-label="Now playing">
+  <img id="barArt" alt="">
+  <div class="info"><b id="barT"></b><span id="barA"></span><button class="dev" id="barDev"></button></div>
+  <button class="ctl prevb" id="barPrev" aria-label="Previous track"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+  <button class="ctl big" id="barPlay" aria-label="Play or pause"></button>
+  <button class="ctl" id="barNext" aria-label="Next track"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+</div>
+<script>
+{
+const C=window.Crate,{esc,store,$}=C;
+const CLIENT_ID='';
+const REDIRECT=location.origin+location.pathname;
+const SCOPES='streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state';
+const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',ICON_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>';
+let sp=store.get('spotify')||{};
+const save=()=>store.set('spotify',sp);
+const clientId=()=>sp.clientId||CLIENT_ID;
+const connected=()=>!!sp.refresh;
+let sdkPlayer=null,sdkDevice=null,state=null,pollT=0;
+
+/* ---------- auth (PKCE) ---------- */
+const b64url=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function login(){
+  if(!clientId()){openConnect();return}
+  const v=b64url(crypto.getRandomValues(new Uint8Array(48)));
+  store.set('spv',v);
+  const ch=b64url(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v)));
+  const q=new URLSearchParams({client_id:clientId(),response_type:'code',redirect_uri:REDIRECT,code_challenge_method:'S256',code_challenge:ch,scope:SCOPES});
+  location.href='https://accounts.spotify.com/authorize?'+q;
+}
+async function tokenReq(params){
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:clientId(),...params})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error_description||j.error||'Spotify sign-in failed');
+  sp.access=j.access_token;sp.exp=Date.now()+j.expires_in*1000;if(j.refresh_token)sp.refresh=j.refresh_token;save();
+}
+async function handleRedirect(){
+  const p=new URLSearchParams(location.search);
+  if(!p.has('code')&&!p.has('error'))return;
+  history.replaceState(null,'',REDIRECT);
+  if(p.get('error')){C.toast(p.get('error')==='access_denied'?'Spotify connection cancelled':'Spotify: '+p.get('error'));return}
+  try{await tokenReq({grant_type:'authorization_code',code:p.get('code'),redirect_uri:REDIRECT,code_verifier:store.get('spv')||''});store.del('spv');C.toast('Spotify connected');startPlayer();poll()}
+  catch(e){C.toast(e.message)}
+}
+async function token(){
+  if(sp.access&&Date.now()<sp.exp-60000)return sp.access;
+  if(!sp.refresh)throw new Error('Connect Spotify first');
+  try{await tokenReq({grant_type:'refresh_token',refresh_token:sp.refresh})}
+  catch(e){sp={clientId:sp.clientId};save();updateUI();throw new Error('Spotify signed you out. Tap the Spotify button to reconnect.')}
+  return sp.access;
+}
+async function api(path,opt={},retry=true){
+  const t=await token();
+  const r=await fetch('https://api.spotify.com/v1'+path,{...opt,headers:{Authorization:'Bearer '+t,...(opt.body?{'Content-Type':'application/json'}:{})}});
+  if(r.status===401&&retry){sp.access='';return api(path,opt,false)}
+  if(r.status===204||r.status===202)return null;
+  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null}catch(e){}
+  if(!r.ok){const e=new Error(j?.error?.message||('Spotify error '+r.status));e.reason=j?.error?.reason;e.status=r.status;throw e}
+  return j;
+}
+
+/* ---------- in-browser player (computers) ---------- */
+function startPlayer(){
+  if(IOS||!connected()||sdkPlayer||window.__spLoading)return;
+  window.__spLoading=1;
+  window.onSpotifyWebPlaybackSDKReady=()=>{
+    sdkPlayer=new Spotify.Player({name:'Crate',getOAuthToken:cb=>token().then(cb).catch(()=>{}),volume:.8});
+    sdkPlayer.addListener('ready',({device_id})=>{sdkDevice=device_id});
+    sdkPlayer.addListener('not_ready',()=>{sdkDevice=null});
+    sdkPlayer.addListener('player_state_changed',()=>setTimeout(poll,300));
+    sdkPlayer.addListener('authentication_error',({message})=>console.warn(message));
+    sdkPlayer.addListener('account_error',()=>C.toast('Playing in Crate needs Spotify Premium'));
+    sdkPlayer.connect();
+  };
+  const s=document.createElement('script');s.src='https://sdk.scdn.co/spotify-player.js';document.head.appendChild(s);
+}
+
+/* ---------- finding albums ---------- */
+const norm=t=>String(t||'').toLowerCase().replace(/\s*[\[(].*?[\])]/g,'').replace(/&/g,'and').replace(/[^a-z0-9]+/g,' ').trim();
+async function findAlbum(x){
+  const cache=store.get('spAlbums')||{};
+  if(cache[x.id])return cache[x.id];
+  const artist=x.artist.split(', ')[0],various=/^various/i.test(artist);
+  const tries=[various?`album:${norm(x.title)}`:`album:${norm(x.title)} artist:${norm(artist)}`,`${various?'':artist+' '}${x.title}`];
+  let best=null,bestScore=-1;
+  for(const q of tries){
+    const res=await api('/search?type=album&limit=10&q='+encodeURIComponent(q));
+    for(const a of res?.albums?.items||[]){
+      if(!a)continue;
+      const tn=norm(a.name),xt=norm(x.title),an=norm(a.artists?.map(z=>z.name).join(' ')),xa=norm(artist);
+      let sc=0;
+      if(tn===xt)sc+=5;else if(tn.startsWith(xt)||xt.startsWith(tn))sc+=3;else if(tn.includes(xt))sc+=1;
+      if(various||an.includes(xa)||xa.includes(an))sc+=4;
+      if(a.album_type==='album')sc+=1;
+      if(x.year&&a.release_date?.startsWith(String(x.year)))sc+=1;
+      if(sc>bestScore){bestScore=sc;best=a}
+    }
+    if(bestScore>=8)break;
+  }
+  if(!best||bestScore<4)return null;
+  const hit={uri:best.uri,url:best.external_urls?.spotify,name:best.name};
+  cache[x.id]=hit;store.set('spAlbums',cache);
+  return hit;
+}
+
+/* ---------- devices ---------- */
+async function devices(){return (await api('/me/player/devices'))?.devices||[]}
+async function pickDevice(){
+  const list=await devices();
+  const chosen=store.get('spDevice');
+  return list.find(d=>d.id===chosen)
+    ||(!IOS&&sdkDevice&&list.find(d=>d.id===sdkDevice))
+    ||list.find(d=>d.is_active)
+    ||(IOS&&list.find(d=>d.type==='Smartphone'))
+    ||(sdkDevice&&{id:sdkDevice,name:'Crate'})
+    ||list[0]||null;
+}
+function wakeSheet(album){
+  C.openSheet(`<h4>Wake up Spotify</h4><p class="sp-note">Spotify isn’t running anywhere Crate can reach. Open the Spotify app on this ${IOS?'phone':'device'} for a moment, then come back to Crate and tap Play again. It will keep playing while you browse.</p>
+  <div class="row2"><a class="btn spot" href="${esc(album?.url||'https://open.spotify.com')}" target="_blank" rel="noopener">Open Spotify</a><button class="btn ghost" id="spClose">Close</button></div>`);
+  $('#spClose').onclick=C.closeSheet;
+}
+
+/* ---------- play ---------- */
+async function playRecord(x){
+  if(sdkPlayer&&!IOS)try{sdkPlayer.activateElement()}catch(e){}
+  C.toast('Finding “'+x.title+'” on Spotify…');
+  let album;
+  try{album=await findAlbum(x)}catch(e){C.toast(e.message);return}
+  if(!album){C.toast('Couldn’t find this one on Spotify. Opening a search instead.');window.open(C.spotifyURL(x),'_blank');return}
+  try{
+    let dev=await pickDevice();
+    if(!dev&&!IOS&&sdkPlayer){await new Promise(r=>setTimeout(r,1500));dev=await pickDevice()}
+    if(!dev){wakeSheet(album);return}
+    await api('/me/player/play?device_id='+encodeURIComponent(dev.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});
+    C.toast('Playing on '+(dev.name||'Spotify'));
+    lastRecord=x;setTimeout(poll,800);setTimeout(poll,2500);
+  }catch(e){
+    if(e.reason==='NO_ACTIVE_DEVICE'||e.status===404)wakeSheet(album);
+    else if(e.reason==='PREMIUM_REQUIRED')C.toast('This needs Spotify Premium');
+    else C.toast(e.message);
+  }
+}
+let lastRecord=null;
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a.spot[data-inst]');
+  if(!a||!connected())return;
+  const x=C.byInst(a.dataset.inst);if(!x)return;
+  e.preventDefault();playRecord(x);
+},true);
+
+/* ---------- now playing bar ---------- */
+async function poll(){
+  clearTimeout(pollT);
+  if(!connected())return;
+  try{state=await api('/me/player?additional_types=track')}catch(e){state=null}
+  renderBar();
+  if(document.visibilityState==='visible')pollT=setTimeout(poll,state?.is_playing?5000:15000);
+}
+function renderBar(){
+  const show=!!(state&&state.item);
+  $('#bar').classList.toggle('hidden',!show);document.body.classList.toggle('hasbar',show);
+  if(!show)return;
+  const it=state.item,img=it.album?.images?.slice(-2)[0]?.url;
+  const art=$('#barArt');if(img){art.src=img;art.style.visibility='visible'}else art.style.visibility='hidden';
+  $('#barT').textContent=it.name;
+  $('#barA').textContent=(it.artists||[]).map(a=>a.name).join(', ')+' · '+(it.album?.name||'');
+  $('#barDev').textContent='▸ '+(state.device?.name||'Spotify');
+  $('#barPlay').innerHTML=state.is_playing?ICON_PAUSE:ICON_PLAY;
+}
+async function ctl(path,method){
+  try{await api(path,{method});}catch(e){C.toast(e.message)}
+  setTimeout(poll,400);
+}
+$('#barPlay').onclick=()=>{if(sdkPlayer&&!IOS)try{sdkPlayer.activateElement()}catch(e){};ctl(state?.is_playing?'/me/player/pause':'/me/player/play','PUT');if(state)state.is_playing=!state.is_playing;renderBar()};
+$('#barNext').onclick=()=>ctl('/me/player/next','POST');
+$('#barPrev').onclick=()=>ctl('/me/player/previous','POST');
+$('#barDev').onclick=deviceSheet;
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')poll()});
+
+async function deviceSheet(){
+  let list=[];try{list=await devices()}catch(e){C.toast(e.message);return}
+  if(!IOS&&sdkDevice&&!list.some(d=>d.id===sdkDevice))list.unshift({id:sdkDevice,name:'Crate (this browser)',type:'Computer'});
+  C.openSheet(`<h4>Play on</h4>${list.length?`<ul class="devlist">${list.map(d=>`<li><button data-id="${esc(d.id)}" class="${d.is_active?'on':''}"><span>${esc(d.name)}<br><small>${esc(d.type)}</small></span>${d.is_active?'<small>Playing</small>':''}</button></li>`).join('')}</ul>`:'<p class="sp-note">No Spotify devices are awake. Open Spotify on your phone, computer or speaker and it will show up here.</p>'}
+  <button class="btn ghost" id="spClose">Close</button>`);
+  $('#spClose').onclick=C.closeSheet;
+  document.querySelectorAll('.devlist button').forEach(b=>b.onclick=async()=>{
+    store.set('spDevice',b.dataset.id);C.closeSheet();
+    try{await api('/me/player',{method:'PUT',body:JSON.stringify({device_ids:[b.dataset.id],play:true})});C.toast('Switched speaker')}catch(e){C.toast(e.message)}
+    setTimeout(poll,800);
+  });
+}
+
+/* ---------- connect sheet ---------- */
+async function openConnect(){
+  if(connected()){
+    let me=null;try{me=await api('/me')}catch(e){}
+    C.openSheet(`<h4>Spotify</h4><p class="sp-note">Connected${me?' as <b style="color:var(--ink)">'+esc(me.display_name||me.id)+'</b>':''}. The green Play buttons now play albums ${IOS?'through the Spotify app on this phone while you stay in Crate':'right here in Crate'}.</p>
+    <div class="row2"><button class="btn ghost" id="spDev">Choose speaker</button><button class="btn ghost" id="spOut">Disconnect</button></div>
+    <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
+    $('#spDev').onclick=deviceSheet;
+    $('#spOut').onclick=()=>{sp={clientId:sp.clientId};save();store.del('spDevice');if(sdkPlayer){sdkPlayer.disconnect();sdkPlayer=null;window.__spLoading=0}state=null;renderBar();updateUI();C.closeSheet();C.toast('Spotify disconnected')};
+  }else{
+    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Play albums from your collection with Spotify Premium${IOS?', using the Spotify app on this phone as the speaker':''}.</p>
+    <label class="field"><span>Spotify Client ID</span><input id="spCid" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(clientId())}" placeholder="From your Spotify developer app"></label>
+    <button class="btn spot" id="spGo">Connect Spotify</button>
+    <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
+    $('#spGo').onclick=()=>{const v=$('#spCid').value.trim();if(!/^[0-9a-f]{32}$/i.test(v)){C.toast('That doesn’t look like a Client ID');return}sp.clientId=v;save();login()};
+  }
+  $('#spClose').onclick=C.closeSheet;
+}
+$('#spBtn').onclick=openConnect;
+function updateUI(){$('#spBtn').style.color=connected()?'#1db954':''}
+
+handleRedirect().then(()=>{updateUI();if(connected()){startPlayer();poll()}});
+}
+</script>
+
 </body>
 </html>

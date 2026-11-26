@@ -83,7 +83,7 @@ select{height:40px;border-radius:20px;border:1px solid var(--line);background:va
 .tile{border:0;padding:0;background:none;text-align:left}
 .tile{cursor:pointer}
 .tile:focus-visible{outline:2px solid var(--hot);outline-offset:3px}
-.tplay{position:absolute;right:8px;bottom:8px;width:44px;height:44px;border-radius:50%;display:grid!important;place-items:center;box-shadow:0 4px 14px #000a;padding:0;transition:transform .15s}
+.tplay{position:absolute;right:8px;bottom:8px;width:44px;height:44px;border-radius:50%;display:grid!important;place-items:center;box-shadow:0 4px 14px #0006;padding:0}
 .tplay svg{width:20px;height:20px;margin-left:2px}
 .tplay:active{transform:scale(.9)}
 .wall .tplay{width:36px;height:36px;right:5px;bottom:5px}
@@ -133,8 +133,9 @@ dt{color:var(--dim)}dd{margin:0}
 .tracks .p{color:var(--dim)}.tracks .d{color:var(--dim);font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:10px;margin-top:16px}
 .row2>*{flex:1;display:grid;place-items:center;text-decoration:none}
-.spot{background:#1db954!important;color:#06130a!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:700}
-.spot svg{color:#06130a}
+.spot{background:rgba(14,15,19,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border:1.5px solid #1db954!important;color:#1ed760!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:600;transition:background .15s,transform .15s}
+.spot:hover{background:rgba(29,185,84,.16)!important}
+.spot:active{background:rgba(29,185,84,.24)!important}
 .hasbar .toast{bottom:calc(96px + var(--safeB))}
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeB));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
@@ -213,7 +214,7 @@ dt{color:var(--dim)}dd{margin:0}
 <script>
 {
 /* auto-update: reload when a newer version is published */
-const BUILD='1795718580';
+const BUILD='1795719497';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -236,7 +237,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const cleanName=n=>String(n||'').replace(/\s\(\d+\)$/,'');
 const detailCache={};
 const spotifyURL=x=>{const a=x.artist.split(', ')[0].replace(/^various$/i,''),t=x.title.replace(/\s*[\[(][^)\]]*(remaster|edition|deluxe|reissue|anniversary)[^)\]]*[)\]]/ig,'');return 'https://open.spotify.com/search/'+encodeURIComponent((a+' '+t).trim())};
-const SPOTIFY_ICON='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M6.5 9.2c3.8-1.1 8-.8 11.2 1M7.2 12.4c3.1-.9 6.4-.6 9.2.9M7.8 15.4c2.4-.6 4.9-.4 7 .7" stroke="#1db954" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>';
+const SPOTIFY_ICON='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 9.6c3.4-1 7.2-.7 10 .9M7.6 12.6c2.8-.8 5.7-.5 8.2.8M8.2 15.4c2.1-.5 4.3-.3 6.2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>';
 let all=[],view=[],folders={},cur=0,mode=store.get('view')||'shelf',creds=store.get('creds')||{};
 
 window.Crate={byInst:i=>all.find(x=>String(x.inst)===String(i)),get current(){return view[cur]},toast:m=>toast(m),esc,store,$,spotifyURL,openSheet:h=>{$('#panel').innerHTML='<div class="grab"></div>'+h;$('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false')},closeSheet:()=>closeDetail()};

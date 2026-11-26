@@ -632,7 +632,7 @@ function wakeSheet(album,others=[]){
   $('#spClose').onclick=C.closeSheet;
   document.querySelectorAll('.devlist button').forEach(b=>b.onclick=async()=>{
     C.closeSheet();
-    try{await api('/me/player/play?device_id='+encodeURIComponent(b.dataset.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});C.toast('Playing on '+b.textContent.trim().split('\n')[0]);setTimeout(poll,800)}catch(e){C.toast(e.message)}
+    try{await api('/me/player/play?device_id='+encodeURIComponent(b.dataset.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});C.toast('Playing on '+b.querySelector('span').firstChild.textContent);setTimeout(poll,800)}catch(e){C.toast(e.message)}
   });
 }
 

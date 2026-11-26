@@ -212,6 +212,22 @@ dt{color:var(--dim)}dd{margin:0}
 
 <script>
 {
+/* auto-update: reload when a newer version is published */
+const BUILD='1795718157';
+(()=>{
+  try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
+  let busy=false;
+  const check=async()=>{
+    if(busy||document.visibilityState!=='visible')return;busy=true;
+    try{
+      const t=await (await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'})).text();
+      const m=t.match(/const BUILD=["']([^"']+)/);
+      if(m&&+m[1]>+BUILD&&!new URLSearchParams(location.search).has('code'))location.replace(location.pathname+'?v='+m[1]);
+    }catch(e){}
+    busy=false;
+  };
+  check();document.addEventListener('visibilitychange',check);
+})();
 const API='https://api.discogs.com';
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -522,7 +522,7 @@ let sp=store.get('spotify')||{};
 const save=()=>store.set('spotify',sp);
 const clientId=()=>sp.clientId||CLIENT_ID;
 const connected=()=>!!sp.refresh;
-let sdkPlayer=null,sdkDevice=null,state=null,pollT=0;
+let sdkPlayer=null,sdkDevice=null,sdkErr='',state=null,pollT=0;
 
 /* ---------- auth (PKCE) ---------- */
 const b64url=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -567,11 +567,13 @@ async function api(path,opt={},retry=true){
 
 /* ---------- in-browser player (computers) ---------- */
 function startPlayer(){
-  if(IOS||!connected()||sdkPlayer||window.__spLoading)return;
+  if(!connected()||sdkPlayer||window.__spLoading)return;
   window.__spLoading=1;
   window.onSpotifyWebPlaybackSDKReady=()=>{
     sdkPlayer=new Spotify.Player({name:'Crate',getOAuthToken:cb=>token().then(cb).catch(()=>{}),volume:.8});
     sdkPlayer.addListener('ready',({device_id})=>{sdkDevice=device_id});
+    sdkPlayer.addListener('initialization_error',({message})=>{sdkErr=message});
+    sdkPlayer.addListener('playback_error',({message})=>{sdkErr=message});
     sdkPlayer.addListener('not_ready',()=>{sdkDevice=null});
     sdkPlayer.addListener('player_state_changed',()=>setTimeout(poll,300));
     sdkPlayer.addListener('authentication_error',({message})=>console.warn(message));
@@ -614,18 +616,19 @@ async function devices(){return (await api('/me/player/devices'))?.devices||[]}
 async function pickDevice(){
   const list=await devices();
   const chosen=store.get('spDevice');
+  const crate=sdkDevice&&(list.find(d=>d.id===sdkDevice)||{id:sdkDevice,name:'Crate'});
   if(IOS){
-    const phone=list.find(d=>d.id===chosen)||list.find(d=>d.type==='Smartphone'&&d.is_active)||list.find(d=>d.type==='Smartphone');
+    const phone=list.find(d=>d.id===chosen)||crate||list.find(d=>d.type==='Smartphone'&&d.is_active)||list.find(d=>d.type==='Smartphone');
     return phone||{none:true,others:list};
   }
   return list.find(d=>d.id===chosen)
-    ||(sdkDevice&&list.find(d=>d.id===sdkDevice))
+    ||crate
     ||list.find(d=>d.is_active)
     ||(sdkDevice&&{id:sdkDevice,name:'Crate'})
     ||list[0]||null;
 }
 function wakeSheet(album,others=[]){
-  C.openSheet(`<h4>Wake up Spotify</h4><p class="sp-note">${IOS?'Your iPhone only shows up to Crate while the Spotify app is awake. Tap <b style="color:var(--ink)">Open Spotify</b>, wait until the album appears, then swipe back to Crate and tap Play again. After that, Crate controls it while you browse.':'Spotify isn’t running anywhere Crate can reach. Open Spotify on a device for a moment, then come back and tap Play again.'}</p>
+  C.openSheet(`<h4>Wake up Spotify</h4><p class="sp-note">${IOS?'Crate’s built-in player didn’t start on this phone'+(sdkErr?' ('+esc(sdkErr)+')':'')+'. As a backup: tap <b style="color:var(--ink)">Open Spotify</b> and start the album playing there. Once it’s playing, Crate’s Play, pause and skip buttons will control it.':'Spotify isn’t running anywhere Crate can reach. Open Spotify on a device for a moment, then come back and tap Play again.'}</p>
   <a class="btn spot" href="${esc(album?.url||'https://open.spotify.com')}" target="_blank" rel="noopener" style="margin-top:12px">Open Spotify</a>
   ${others.length?`<p class="sp-note" style="margin-top:16px">Or play it on:</p><ul class="devlist">${others.map(d=>`<li><button data-id="${esc(d.id)}"><span>${esc(d.name)}<br><small>${esc(d.type)}</small></span></button></li>`).join('')}</ul>`:''}
   <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
@@ -638,14 +641,14 @@ function wakeSheet(album,others=[]){
 
 /* ---------- play ---------- */
 async function playRecord(x){
-  if(sdkPlayer&&!IOS)try{sdkPlayer.activateElement()}catch(e){}
+  if(sdkPlayer)try{sdkPlayer.activateElement()}catch(e){}
   C.toast('Finding “'+x.title+'” on Spotify…');
   let album;
   try{album=await findAlbum(x)}catch(e){store.set('spLastErr','search '+(e.status||'')+' '+e.message);C.toast('Spotify search failed: '+e.message);return}
   if(!album){C.toast('Couldn’t find this one on Spotify. Opening a search instead.');window.open(C.spotifyURL(x),'_blank');return}
   try{
     let dev=await pickDevice();
-    if(!dev&&!IOS&&sdkPlayer){await new Promise(r=>setTimeout(r,1500));dev=await pickDevice()}
+    if((!dev||dev.none)&&sdkPlayer&&!sdkDevice){for(let i=0;i<6&&!sdkDevice;i++)await new Promise(r=>setTimeout(r,500));dev=await pickDevice()}
     if(!dev||dev.none){wakeSheet(album,dev?.others||[]);return}
     await api('/me/player/play?device_id='+encodeURIComponent(dev.id),{method:'PUT',body:JSON.stringify({context_uri:album.uri})});
     C.toast('Playing on '+(dev.name||'Spotify'));
@@ -690,7 +693,7 @@ async function ctl(path,method){
   try{await api(path,{method});}catch(e){C.toast(e.message)}
   setTimeout(poll,400);
 }
-$('#barPlay').onclick=()=>{if(sdkPlayer&&!IOS)try{sdkPlayer.activateElement()}catch(e){};ctl(state?.is_playing?'/me/player/pause':'/me/player/play','PUT');if(state)state.is_playing=!state.is_playing;renderBar()};
+$('#barPlay').onclick=()=>{if(sdkPlayer)try{sdkPlayer.activateElement()}catch(e){};ctl(state?.is_playing?'/me/player/pause':'/me/player/play','PUT');if(state)state.is_playing=!state.is_playing;renderBar()};
 $('#barNext').onclick=()=>ctl('/me/player/next','POST');
 $('#barPrev').onclick=()=>ctl('/me/player/previous','POST');
 $('#barDev').onclick=deviceSheet;
@@ -698,7 +701,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 async function deviceSheet(){
   let list=[];try{list=await devices()}catch(e){C.toast(e.message);return}
-  if(!IOS&&sdkDevice&&!list.some(d=>d.id===sdkDevice))list.unshift({id:sdkDevice,name:'Crate (this browser)',type:'Computer'});
+  if(sdkDevice&&!list.some(d=>d.id===sdkDevice))list.unshift({id:sdkDevice,name:'Crate (this '+(IOS?'phone':'browser')+')',type:IOS?'Smartphone':'Computer'});
   C.openSheet(`<h4>Play on</h4>${list.length?`<ul class="devlist">${list.map(d=>`<li><button data-id="${esc(d.id)}" class="${d.is_active?'on':''}"><span>${esc(d.name)}<br><small>${esc(d.type)}</small></span>${d.is_active?'<small>Playing</small>':''}</button></li>`).join('')}</ul>`:'<p class="sp-note">No Spotify devices are awake. Open Spotify on your phone, computer or speaker and it will show up here.</p>'}
   <button class="btn ghost" id="spClose">Close</button>`);
   $('#spClose').onclick=C.closeSheet;
@@ -713,7 +716,7 @@ async function deviceSheet(){
 async function openConnect(){
   if(connected()){
     let me=null;try{me=await api('/me')}catch(e){}
-    C.openSheet(`<h4>Spotify</h4><p class="sp-note">Connected${me?' as <b style="color:var(--ink)">'+esc(me.display_name||me.id)+'</b>':''}. The green Play buttons now play albums ${IOS?'through the Spotify app on this phone while you stay in Crate':'right here in Crate'}.</p>
+    C.openSheet(`<h4>Spotify</h4><p class="sp-note">Connected${me?' as <b style="color:var(--ink)">'+esc(me.display_name||me.id)+'</b>':''}. The green Play buttons now play albums right here in Crate.</p>
     <button class="btn spot" id="spDiag">Check connection</button><pre id="diagOut" class="sp-note" style="white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace;background:var(--bg);border-radius:12px;padding:12px;display:none"></pre>
     <div class="row2"><button class="btn ghost" id="spDev">Choose speaker</button><button class="btn ghost" id="spOut">Disconnect</button></div>
     <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
@@ -721,7 +724,7 @@ async function openConnect(){
     $('#spDiag').onclick=runDiag;
     $('#spOut').onclick=()=>{sp={clientId:sp.clientId};save();store.del('spDevice');if(sdkPlayer){sdkPlayer.disconnect();sdkPlayer=null;window.__spLoading=0}state=null;renderBar();updateUI();C.closeSheet();C.toast('Spotify disconnected')};
   }else{
-    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Connect once so the Play buttons play albums with your Spotify Premium${IOS?', using the Spotify app on this phone as the speaker':''}.</p>
+    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Connect once so the Play buttons play albums right here in Crate with your Spotify Premium.</p>
     <label class="field"><span>Spotify Client ID</span><input id="spCid" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(clientId())}" placeholder="From your Spotify developer app"></label>
     <button class="btn spot" id="spGo">Connect Spotify</button>
     <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
@@ -735,7 +738,7 @@ async function runDiag(){
   try{await token();w('✓ Signed in to Spotify')}catch(e){w('✗ Sign-in: '+e.message);return}
   try{const me=await api('/me');w('✓ Account: '+(me.display_name||me.id)+(me.product?' · plan: '+me.product:''))}catch(e){w('✗ Account: '+e.message+(e.status?' ('+e.status+')':''))}
   try{const d=await devices();w((d.length?'✓':'✗')+' Spotify devices awake: '+(d.map(x=>x.name+(x.is_active?' (active)':'')).join(', ')||'none'))}catch(e){w('✗ Devices: '+e.message+' ('+e.status+')')}
-  if(!IOS)w((sdkDevice?'✓':'✗')+' In-browser player: '+(sdkDevice?'ready':(sdkPlayer?'starting / not ready':'not loaded')));
+  w((sdkDevice?'✓':'✗')+' Crate player: '+(sdkDevice?'ready':(sdkPlayer?'starting / not ready':'not loaded'))+(sdkErr?' · '+sdkErr:''));
   const x=C.current;
   if(x){try{store.set('spAlbums',{});const a=await findAlbum(x);w(a?'✓ Found “'+a.name+'” for '+x.title:'✗ No Spotify match for '+x.title)}catch(e){w('✗ Search: '+e.message+' ('+e.status+')')}}
   try{const st=await api('/me/player');w('Now: '+(st?.item?(st.is_playing?'playing ':'paused ')+st.item.name+' on '+st.device?.name:'nothing playing'))}catch(e){w('✗ Player: '+e.message+' ('+e.status+')')}

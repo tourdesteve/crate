@@ -169,21 +169,31 @@ dt{color:var(--dim)}dd{margin:0}
 .tile.playing .t{color:#1ed760}
 .tile.playing .t::before{content:"";display:inline-block;width:12px;height:11px;margin-right:6px;background:linear-gradient(#1ed760,#1ed760) 0 100%/3px 60% no-repeat,linear-gradient(#1ed760,#1ed760) 4.5px 100%/3px 100% no-repeat,linear-gradient(#1ed760,#1ed760) 9px 100%/3px 40% no-repeat}
 .wall .tile.playing .cv{outline-offset:-2px}
-.sp-on .tracks li{cursor:pointer;border-radius:8px}
-.sp-on .tracks li:hover{background:#ffffff0a}
-.sp-on .tracks li:active{background:#1db95422}
+.incrate .tracks li{cursor:pointer;border-radius:8px}
+.incrate .tracks li:hover{background:#ffffff0a}
+.incrate .tracks li:active{background:#1db95422}
 .grade{display:inline-block;padding:2px 10px;border-radius:12px;border:1px solid var(--g);color:var(--g);font-size:13px;font-weight:600;background:color-mix(in srgb,var(--g) 12%,transparent)}
 .tracks .p{color:var(--dim)}.tracks .d{color:var(--dim);font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:10px;margin-top:16px}
 .row2>*{flex:1;display:grid;place-items:center;text-decoration:none}
-.spot{background:rgba(14,15,19,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border:1.5px solid #1db954!important;color:#1ed760!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:600;transition:background .15s,transform .15s}
-.spot:hover{background:rgba(29,185,84,.16)!important}
-.spot:active{background:rgba(29,185,84,.24)!important}
+.spot{background:rgba(14,15,19,.42)!important;-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border:1.5px solid var(--svc,#1ed760)!important;color:var(--svc,#1ed760)!important;display:flex!important;align-items:center;justify-content:center;gap:8px;text-decoration:none;font-weight:600;transition:background .15s,transform .15s}
+.spot:hover{background:color-mix(in srgb,var(--svc,#1ed760) 16%,transparent)!important}
+.spot:active{background:color-mix(in srgb,var(--svc,#1ed760) 26%,transparent)!important}
 .hasbar .toast{bottom:calc(96px + var(--safeB))}
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeB));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
 .x{}
+.svcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.svcs button{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:15px;padding:0 12px;display:flex;align-items:center;gap:10px}
+.svcs button::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.svcs button.on{border-color:var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--bg))}
+.steps{padding-left:22px;margin:12px 0;font-size:15px;line-height:1.55}
+.steps li{margin-bottom:10px}
+.steps a{color:var(--ink)}
+.copyrow{display:flex;gap:8px;align-items:center;margin-top:6px}
+.copyrow code{flex:1;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;overflow-wrap:anywhere}
+.copyrow button{flex:none;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--panel);padding:0 14px;font-weight:600}
 @media(prefers-reduced-motion:reduce){.skel{animation:none}.slot.playing .disc{animation:none;transform:translateX(42%)}.logo{animation:none}.disc,.panel,#sheet,#fsheet{transition:none}}
 </style>
 </head>
@@ -270,7 +280,7 @@ dt{color:var(--dim)}dd{margin:0}
 /* save cover images on this device */
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 /* auto-update: reload when a newer version is published */
-const BUILD='1795804760';
+const BUILD='1795806266';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -294,9 +304,29 @@ const cleanName=n=>String(n||'').replace(/\s\(\d+\)$/,'');
 const detailCache={};
 const spotifyURL=x=>{const a=x.artist.split(', ')[0].replace(/^various$/i,''),t=x.title.replace(/\s*[\[(][^)\]]*(remaster|edition|deluxe|reissue|anniversary)[^)\]]*[)\]]/ig,'');return 'https://open.spotify.com/search/'+encodeURIComponent((a+' '+t).trim())};
 const SPOTIFY_ICON='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 9.6c3.4-1 7.2-.7 10 .9M7.6 12.6c2.8-.8 5.7-.5 8.2.8M8.2 15.4c2.1-.5 4.3-.3 6.2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>';
+const PLAY_ICON='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+const SERVICES={
+  spotify:{name:'Spotify',color:'#1ed760',url:q=>'https://open.spotify.com/search/'+q},
+  apple:{name:'Apple Music',color:'#ff4d5e',url:q=>'https://music.apple.com/us/search?term='+q},
+  youtube:{name:'YouTube Music',color:'#ff5a52',url:q=>'https://music.youtube.com/search?q='+q},
+  tidal:{name:'TIDAL',color:'#e6e6e6',url:q=>'https://listen.tidal.com/search?q='+q},
+  deezer:{name:'Deezer',color:'#b77bff',url:q=>'https://www.deezer.com/search/'+q},
+  amazon:{name:'Amazon Music',color:'#3fd8e0',url:q=>'https://music.amazon.com/search/'+q}
+};
+const svc=()=>{const k=store.get('service');return SERVICES[k]?k:'spotify'};
+const albumQuery=x=>{const a=x.artist.split(', ')[0].replace(/\s*\(\d+\)$/,'').replace(/^various( artists)?$/i,''),t=x.title.replace(/\s*[\[(][^)\]]*(remaster|edition|deluxe|reissue|anniversary)[^)\]]*[)\]]/ig,'');return encodeURIComponent((a+' '+t).trim())};
+const serviceURL=x=>SERVICES[svc()].url(albumQuery(x));
+const inCrate=()=>svc()==='spotify'&&!!window.CrateSpotify?.connected();
+const svcIcon=()=>svc()==='spotify'?SPOTIFY_ICON:PLAY_ICON;
+const playLabel=()=>inCrate()?'Play':'Open in '+SERVICES[svc()].name;
+function applyService(){
+  document.documentElement.style.setProperty('--svc',SERVICES[svc()].color);
+  document.body.classList.toggle('incrate',inCrate());
+  if(all.length&&!$('#app').classList.contains('hidden')){$('#np').dataset.i='-';render(view[cur]?.inst)}
+}
 let all=[],view=[],folders={},cur=0,mode=store.get('view')||'shelf',creds=store.get('creds')||{};
 
-window.Crate={markPlaying:(id,on)=>markPlaying(id,on),byId:id=>all.find(x=>x.id===id),byInst:i=>all.find(x=>String(x.inst)===String(i)),get current(){return view[cur]},toast:m=>toast(m),esc,store,$,spotifyURL,openSheet:h=>{$('#panel').innerHTML='<div class="grab"></div>'+h;$('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false')},closeSheet:()=>closeDetail()};
+window.Crate={applyService:()=>applyService(),service:()=>svc(),firstRun:()=>firstRun(),markPlaying:(id,on)=>markPlaying(id,on),byId:id=>all.find(x=>x.id===id),byInst:i=>all.find(x=>String(x.inst)===String(i)),get current(){return view[cur]},toast:m=>toast(m),esc,store,$,spotifyURL,openSheet:h=>{$('#panel').innerHTML='<div class="grab"></div>'+h;$('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false')},closeSheet:()=>closeDetail()};
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 
 async function api(path,attempt=0){
@@ -422,6 +452,7 @@ function boot(keepId){
   fillSelect($('#fFolder'),'All folders',fl.map(([id,n])=>[id,`${folders[id]} (${n})`]));
   const st=store.get('filters');if(st){for(const k in st){const el=$('#'+k);if(el&&[...(el.options||[{value:st[k]}])].some(o=>o.value===st[k]))el.value=st[k]}}
   setMode(mode,true);apply(keepId);
+  if(window.CrateSpotify&&!store.get('service'))setTimeout(firstRun,600);
 }
 
 let seed=Math.random();
@@ -505,7 +536,7 @@ function setCur(i){
   document.querySelectorAll('.slot.on').forEach(e=>e.classList.remove('on'));
   const el=$('#flow').children[i-base];if(el)el.classList.add('on');
   store.set('pos',x.inst);
-  const pc=$('#playCur');pc.href=spotifyURL(x);pc.innerHTML=SPOTIFY_ICON+'Play';pc.setAttribute('aria-label','Play '+x.title+' on Spotify');pc.dataset.inst=x.inst;
+  const pc=$('#playCur');pc.href=serviceURL(x);pc.innerHTML=svcIcon()+(inCrate()?'Play':'Open');pc.setAttribute('aria-label',(inCrate()?'Play ':'Open ')+x.title+' in '+SERVICES[svc()].name);pc.dataset.inst=x.inst;
 }
 let raf=0;
 function tilt(){
@@ -552,7 +583,7 @@ function renderGrid(){
 function moreGrid(){
   const grid=$('#grid');const next=view.slice(gridShown,gridShown+CHUNK);
   grid.querySelector('.sentinel')?.remove();
-  grid.insertAdjacentHTML('beforeend',next.map((x,k)=>`<div class="tile" role="button" tabindex="0" data-i="${gridShown+k}" aria-label="${esc(x.artist+' – '+x.title)}"><div class="cv">${coverHTML(x,mode!=='wall'||innerWidth>700)}<a class="spot tplay" data-inst="${esc(x.inst)}" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener" aria-label="${esc('Play '+x.title)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a></div><div class="t">${esc(x.title)}</div><div class="a">${esc(x.artist)}${x.year?' · '+x.year:''}</div></div>`).join(''));
+  grid.insertAdjacentHTML('beforeend',next.map((x,k)=>`<div class="tile" role="button" tabindex="0" data-i="${gridShown+k}" aria-label="${esc(x.artist+' – '+x.title)}"><div class="cv">${coverHTML(x,mode!=='wall'||innerWidth>700)}<a class="spot tplay" data-inst="${esc(x.inst)}" href="${esc(serviceURL(x))}" target="_blank" rel="noopener" aria-label="${esc((inCrate()?'Play ':'Open ')+x.title+' in '+SERVICES[svc()].name)}"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></a></div><div class="t">${esc(x.title)}</div><div class="a">${esc(x.artist)}${x.year?' · '+x.year:''}</div></div>`).join(''));
   gridShown+=next.length;markPlaying(playingId,playingOn);
   if(gridShown<view.length){const s=document.createElement('div');s.className='sentinel';s.style.cssText='grid-column:1/-1;height:1px';grid.appendChild(s);gridObs?.disconnect();gridObs=new IntersectionObserver(es=>{if(es[0].isIntersecting)moreGrid()},{rootMargin:'800px'});gridObs.observe(s)}
 }
@@ -644,8 +675,8 @@ async function openDetail(x){
     ${plays(x.id).n?`<dt>Played in Crate</dt><dd>${plays(x.id).n} time${plays(x.id).n>1?'s':''} · last ${esc(ago(plays(x.id).last))}</dd>`:''}
     ${notesHTML(x)}</dl>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
-    <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
-    <button class="hint" data-rematch="${esc(x.inst)}" style="background:none;border:0;padding:8px 0;margin:4px 0 0;text-decoration:underline;color:var(--dim)">Wrong album? Pick a different Spotify version</button>
+    <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(serviceURL(x))}" target="_blank" rel="noopener">${svcIcon()}${esc(inCrate()?'Play':playLabel())}</a>
+    ${inCrate()?`<button class="hint" data-rematch="${esc(x.inst)}" style="background:none;border:0;padding:8px 0;margin:4px 0 0;text-decoration:underline;color:var(--dim)">Wrong album? Pick a different Spotify version</button>`:''}
     <div class="row2" style="margin-top:10px"><a class="btn ghost" href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Open on Discogs</a><button class="btn ghost" id="close">Close</button></div>
   </div></div>`;
   $('#sheet').classList.add('open');$('#sheet').setAttribute('aria-hidden','false');
@@ -684,8 +715,9 @@ function openSettings(){
   <label class="field" style="margin-top:12px"><span>${creds.token?'Personal access token (saved)':'Add a personal access token for grading, notes and value'}</span><input id="sTok" type="password" autocomplete="off" placeholder="${creds.token?'••••••••  paste a new one to replace':'From Discogs → Settings → Developers'}"></label>
   <button class="btn ghost" id="sTokSave" style="margin-bottom:10px">Save token</button>
   <div class="row2"><button class="btn ghost" id="sFull">Reload everything</button><button class="btn ghost" id="sOut">Switch account</button></div></div>
-  <div class="sect"><h5>Spotify</h5><p class="sp-note">${spOn?'Connected. Play buttons play albums right here in Crate.':'Not connected. Connect to play albums from your collection.'}</p>
-  <button class="btn spot" id="sSpot">${spOn?'Spotify settings':'Connect Spotify'}</button></div>
+  <div class="sect"><h5>Music</h5><p class="sp-note">Play buttons open albums in:</p>
+  ${servicePicker()}
+  ${svc()==='spotify'?(spOn?'<p class="sp-note">Albums play right here in Crate, with the Now Playing screen.</p><button class="btn spot" id="sSpot">Spotify settings</button>':'<p class="sp-note">Opens albums in the Spotify app. With Spotify Premium you can make them play inside Crate instead, with the spinning record and Now Playing screen.</p><button class="btn spot" id="sSpot">Set up playing inside Crate</button>'):`<p class="sp-note">Opens a search for the album in ${esc(SERVICES[svc()].name)}. It’s usually the first result.</p>`}</div>
   <button class="btn ghost" id="sClose" style="margin-top:18px">Close</button>`);
   $('#sFull').onclick=()=>{closeDetail();load(true)};
   $('#sTokSave').onclick=async()=>{
@@ -696,10 +728,21 @@ function openSettings(){
     store.set('creds',creds);valueMem=null;closeDetail();toast('Token saved. Reloading to fetch grading and notes…');load(true,true);
   };
   $('#sOut').onclick=()=>{closeDetail();signOut()};
-  $('#sSpot').onclick=()=>{if(S)S.open()};
+  if($('#sSpot'))$('#sSpot').onclick=()=>{if(S)S.open()};
+  bindServicePicker(openSettings);
   $('#sClose').onclick=closeDetail;
 }
 $('#settingsBtn').onclick=openSettings;
+function servicePicker(none){const cur=none?'':svc();return `<div class="svcs" role="radiogroup" aria-label="Music service">${Object.entries(SERVICES).map(([k,v])=>`<button role="radio" aria-checked="${k===cur}" data-svc="${k}" class="${k===cur?'on':''}" style="--c:${v.color}">${esc(v.name)}</button>`).join('')}</div>`}
+function bindServicePicker(after){document.querySelectorAll('.svcs [data-svc]').forEach(b=>b.onclick=()=>{store.set('service',b.dataset.svc);applyService();after&&after()})}
+let firstRunShown=false;
+function firstRun(){
+  if(firstRunShown||store.get('service')||$('#app').classList.contains('hidden')||$('#sheet').classList.contains('open'))return;
+  firstRunShown=true;
+  window.Crate.openSheet(`<h4>How do you listen?</h4><p class="sp-note">Pick your music service and the Play buttons will open albums from your collection there. You can change this any time in Settings.</p>${servicePicker(true)}<button class="btn ghost" id="frSkip">Decide later</button>`);
+  bindServicePicker(()=>{closeDetail();toast('Albums will open in '+SERVICES[svc()].name)});
+  $('#frSkip').onclick=()=>{store.set('service','spotify');applyService();closeDetail()};
+}
 let ty=0;$('#panel').addEventListener('touchstart',e=>{ty=e.touches[0].clientY},{passive:true});
 $('#panel').addEventListener('touchend',e=>{if($('#panel').scrollTop<=0&&e.changedTouches[0].clientY-ty>90)closeDetail()},{passive:true});
 
@@ -719,7 +762,7 @@ $('#shuffle').onclick=()=>{
   let i=Math.floor(Math.random()*view.length);if(view.length>1&&i===cur)i=(i+1)%view.length;
   const x=view[i],S=window.CrateSpotify;
   if(mode!=='shelf'){setMode('shelf',true);renderShelf(x.inst)}else goTo(i,Math.abs(i-cur)<40);
-  if(S&&S.connected())S.play(x);else setTimeout(()=>toast('Put this one on: '+x.title),400);
+  if(inCrate())S.play(x);else setTimeout(()=>toast('Put this one on: '+x.title),400);
 };
 $('#refresh').onclick=()=>quickSync(false);
 function signOut(){store.del('cache');store.del('creds');store.del('pos');creds={};all=[];$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#user').value='';$('#token').value=''}
@@ -837,7 +880,7 @@ if(creds.user||creds.token){
 <script>
 {
 const C=window.Crate,{esc,store,$}=C;
-const CLIENT_ID='9cc417125215432498310013f96eb2a6';
+const CLIENT_ID='';
 const REDIRECT=location.origin+location.pathname;
 const SCOPES='streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state';
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -845,6 +888,9 @@ const ICON_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l1
 let sp=store.get('spotify')||{};
 const save=()=>store.set('spotify',sp);
 const clientId=()=>sp.clientId||CLIENT_ID;
+// Connections made before each user brought their own Client ID used the original Crate app's ID.
+if(sp.refresh&&!sp.clientId){sp.clientId='9cc417125215432498310013f96eb2a6';save()}
+const useCrate=()=>connected()&&C.service()==='spotify';
 const connected=()=>!!sp.refresh;
 let sdkPlayer=null,sdkDevice=null,sdkErr='',state=null,pollT=0;
 
@@ -1002,9 +1048,9 @@ async function playAlbum(x,album,trackUri){
 let lastRecord=null;
 document.addEventListener('click',async e=>{
   const rm=e.target.closest('[data-rematch]');
-  if(rm){e.preventDefault();if(!connected()){openConnect();return}const x=C.byInst(rm.dataset.rematch);if(!x)return;C.toast('Looking up versions…');try{const r=await findAlbum(x,true);pickSheet(x,r.candidates||[],c=>playAlbum(x,c))}catch(err){C.toast(err.message)}return}
+  if(rm){e.preventDefault();if(!useCrate()){openConnect();return}const x=C.byInst(rm.dataset.rematch);if(!x)return;C.toast('Looking up versions…');try{const r=await findAlbum(x,true);pickSheet(x,r.candidates||[],c=>playAlbum(x,c))}catch(err){C.toast(err.message)}return}
   const tr=e.target.closest('.tracks li[data-n]');
-  if(tr&&connected()){
+  if(tr&&useCrate()){
     if(sdkPlayer)try{sdkPlayer.activateElement()}catch(err){}
     const x=C.byInst(tr.closest('.tracks').dataset.inst);if(!x)return;
     const n=+tr.dataset.n,title=tr.dataset.title;
@@ -1019,10 +1065,9 @@ document.addEventListener('click',async e=>{
     return;
   }
   const a=e.target.closest('a.spot[data-inst]');
-  if(!a)return;
+  if(!a||!useCrate())return; // other services and un-set-up Spotify: the link opens the album in that app
   const x=C.byInst(a.dataset.inst);if(!x)return;
   e.preventDefault();
-  if(!connected()){openConnect();return}
   playRecord(x);
 },true);
 
@@ -1185,11 +1230,21 @@ async function openConnect(){
     $('#spDiag').onclick=runDiag;
     $('#spOut').onclick=()=>{sp={clientId:sp.clientId};save();store.del('spDevice');if(sdkPlayer){sdkPlayer.disconnect();sdkPlayer=null;window.__spLoading=0}state=null;renderBar();updateUI();C.closeSheet();C.toast('Spotify disconnected')};
   }else{
-    C.openSheet(`<h4>Connect Spotify</h4><p class="sp-note">Connect once so the Play buttons play albums right here in Crate with your Spotify Premium.</p>
-    <label class="field"><span>Spotify Client ID</span><input id="spCid" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(clientId())}" placeholder="From your Spotify developer app"></label>
+    C.openSheet(`<h4>Play inside Crate with Spotify</h4>
+    <p class="sp-note">Spotify only lets apps like Crate play music for people who set up their own free “developer app”. It takes about 5 minutes, is easiest on a computer, and needs <b style="color:var(--ink)">Spotify Premium</b>.</p>
+    <ol class="steps">
+      <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> and log in with your Spotify account. Accept the terms if asked.</li>
+      <li>Click <b>Create app</b>. Use any name and description, like “My Crate”.</li>
+      <li>Under <b>Redirect URIs</b>, paste this address exactly and click <b>Add</b>:
+        <div class="copyrow"><code id="spRedir">${esc(REDIRECT)}</code><button id="spCopy">Copy</button></div></li>
+      <li>Under <b>Which API/SDKs are you planning to use?</b>, tick <b>Web API</b> and <b>Web Playback SDK</b>. Tick the terms box and click <b>Save</b>.</li>
+      <li>On your new app’s page, open <b>Settings</b>, copy the <b>Client ID</b> and paste it below. You don’t need the Client Secret.</li>
+    </ol>
+    <label class="field"><span>Spotify Client ID</span><input id="spCid" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(clientId())}" placeholder="32 letters and numbers"></label>
     <button class="btn spot" id="spGo">Connect Spotify</button>
     <button class="btn ghost" id="spClose" style="margin-top:10px">Close</button>`);
-    $('#spGo').onclick=()=>{const v=$('#spCid').value.trim();if(!/^[0-9a-f]{32}$/i.test(v)){C.toast('That doesn’t look like a Client ID');return}sp.clientId=v;save();login()};
+    $('#spCopy').onclick=async()=>{try{await navigator.clipboard.writeText(REDIRECT);$('#spCopy').textContent='Copied'}catch(e){const r=document.createRange();r.selectNodeContents($('#spRedir'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);C.toast('Selected. Copy it from here.')}};
+    $('#spGo').onclick=()=>{const v=$('#spCid').value.trim();if(v)store.set('service','spotify');if(!/^[0-9a-f]{32}$/i.test(v)){C.toast('That doesn’t look like a Client ID');return}sp.clientId=v;save();login()};
   }
   $('#spClose').onclick=C.closeSheet;
 }
@@ -1206,9 +1261,13 @@ async function runDiag(){
   w('Last play error: '+(store.get('spLastErr')||'none'));
 }
 window.CrateSpotify={open:openConnect,connected,play:x=>playRecord(x)};
-function updateUI(){document.body.classList.toggle('sp-on',connected());if(!connected()){state=null;C.markPlaying&&C.markPlaying(null,false)}}
+function updateUI(){C.applyService();if(!connected()){state=null;C.markPlaying&&C.markPlaying(null,false)}}
 
-handleRedirect().then(()=>{updateUI();if(connected()){startPlayer();poll()}});
+handleRedirect().then(()=>{
+  if(!store.get('service')&&connected())store.set('service','spotify');
+  updateUI();if(connected()){startPlayer();poll()}
+  if(!store.get('service'))setTimeout(C.firstRun,800);
+});
 }
 </script>
 

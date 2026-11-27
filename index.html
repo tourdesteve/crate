@@ -184,6 +184,15 @@ dt{color:var(--dim)}dd{margin:0}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
 .x{}
+.attrib{text-align:center;font-size:12px;color:var(--dim);margin:10px 0 0;padding:0 16px calc(16px + var(--safeB))}
+.attrib a{color:var(--dim)}
+#attribFoot{position:relative;z-index:1;margin-top:-20px}
+.hasbar #attribFoot{padding-bottom:calc(100px + var(--safeB))}
+.legal{font-size:12px;line-height:1.5;color:var(--dim);margin-top:22px;text-align:left}
+.legal a{color:var(--ink)}
+.howto{text-align:left;margin-top:10px;font-size:14px}
+.howto summary{cursor:pointer;color:var(--ink);font-weight:600;min-height:32px;display:flex;align-items:center}
+.howto .steps{font-size:14px}
 .svcs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 12px}
 .svcs button{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:15px;padding:0 12px;display:flex;align-items:center;gap:10px}
 .svcs button::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
@@ -205,11 +214,17 @@ dt{color:var(--dim)}dd{margin:0}
     <h1>Crate</h1>
     <p class="sub">Flip through your Discogs collection like a record bin.</p>
     <label class="field"><span>Discogs username</span><input id="user" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="e.g. vinyljunkie"></label>
-    <label class="field"><span>Personal access token (optional)</span><input id="token" type="password" autocomplete="off" placeholder="Needed if your collection is private"></label>
+    <label class="field"><span>Personal access token (optional)</span><input id="token" type="password" autocomplete="off" placeholder="Optional"></label>
     <button class="btn" type="submit" id="go">Open my crate</button>
     <div id="progress" class="hidden"><i></i></div>
     <p id="err" role="status"></p>
-    <p class="hint">Your collection needs to be public, or you can paste a token from <a href="https://www.discogs.com/settings/developers" target="_blank" rel="noopener">Discogs → Settings → Developers</a>. Your details stay in this browser and go only to Discogs.</p>
+    <p class="hint">Works with any public Discogs collection. Add a token to open a private collection or see your grading, notes and collection value.</p>
+    <details class="howto"><summary>How do I get a token?</summary><ol class="steps">
+      <li>Sign in at <a href="https://www.discogs.com/settings/developers" target="_blank" rel="noopener">discogs.com/settings/developers</a>.</li>
+      <li>Click <b>Generate new token</b>.</li>
+      <li>Copy the long code it shows and paste it here.</li>
+    </ol><p class="hint">Crate only reads your collection with it. You can delete the token on that same Discogs page at any time.</p></details>
+    <p class="legal">Crate is free and keeps everything on your device. <a href="privacy.html">Privacy</a> · <a href="https://github.com/tourdesteve/crate/issues" target="_blank" rel="noopener">Feedback</a><br>This application uses Discogs’ API but is not affiliated with, sponsored or endorsed by Discogs. “Discogs” is a trademark of Zink Media, LLC.</p>
   </form>
 </section>
 
@@ -245,10 +260,11 @@ dt{color:var(--dim)}dd{margin:0}
       <a class="btn spot" id="playCur" href="#" target="_blank" rel="noopener" style="width:auto;padding:0 18px;height:44px">Play</a>
       <button class="icon" id="next" aria-label="Next record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></button>
     </div>
-    <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Jump through collection"><div class="lbl"><span id="scrubA"></span><span id="scrubB"></span></div></div>
+    <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Jump through collection"><div class="lbl"><span id="scrubA"></span><span id="scrubB"></span></div><p class="attrib"><a class="dlink" href="https://www.discogs.com/" target="_blank" rel="noopener">Data provided by Discogs.</a></p></div>
   </div>
   <div id="grid" class="hidden"></div>
   <div id="stats" class="hidden"></div>
+  <p class="attrib" id="attribFoot"><a class="dlink" href="https://www.discogs.com/" target="_blank" rel="noopener">Data provided by Discogs.</a></p>
 </section>
 
 <div id="fsheet" aria-hidden="true"><div class="panel" role="dialog" aria-modal="true" aria-labelledby="fTitle">
@@ -280,7 +296,7 @@ dt{color:var(--dim)}dd{margin:0}
 /* save cover images on this device */
 if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 /* auto-update: reload when a newer version is published */
-const BUILD='1795806266';
+const BUILD='1795807078';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -407,6 +423,17 @@ function skeleton(){
   requestAnimationFrame(()=>{const f=$('#flow');const m=f.children[1];if(m)f.scrollLeft=m.offsetLeft-(f.clientWidth-m.offsetWidth)/2});
 }
 
+/* Discogs asks apps not to show data more than 6 hours older than discogs.com,
+   so a full refresh runs in the background once the saved copy is that old. */
+const FRESH_MS=6*3600000;
+function freshen(){
+  const c=store.get('cache');if(!c||!creds.user||loading||syncing)return;
+  const age=Date.now()-(c.at||0);
+  if(age>FRESH_MS-15*60000)load(true,true);
+  else if(age>30*60000)quickSync(true);
+}
+setInterval(()=>{if(document.visibilityState==='visible')freshen()},10*60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')freshen()});
 /* quick sync: fetch only records added since last time */
 let syncing=false;
 async function quickSync(silent){
@@ -427,7 +454,7 @@ async function quickSync(silent){
     const merged=fresh.concat(all);
     if(merged.length!==total){syncing=false;$('#refresh').classList.remove('spin');if(!silent)toast('Your collection changed, reloading everything…');return load(true)}
     const keep=view[cur]?.inst;
-    all=merged;store.set('cache',{...cache,items:all,at:Date.now()});
+    all=merged;store.set('cache',{...cache,items:all,quickAt:Date.now()});
     if(fresh.length){boot(keep);toast(fresh.length===1?'1 new record: '+fresh[0].title:fresh.length+' new records added')}
     else if(!silent)toast('Up to date');
   }catch(e){if(!silent)toast(e.message)}
@@ -443,6 +470,7 @@ const countBy=(arr,fn)=>{const m={};arr.forEach(x=>[].concat(fn(x)).forEach(k=>{
 const decadeOf=y=>y?Math.floor(y/10)*10:null;
 
 function boot(keepId){
+  document.querySelectorAll('.dlink').forEach(a=>a.href='https://www.discogs.com/user/'+encodeURIComponent(creds.user||'')+'/collection');
   $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
   fillSelect($('#fGenre'),'All genres',countBy(all,x=>x.genres).map(([g,n])=>[g,`${g} (${n})`]));
   fillSelect($('#fFormat'),'All formats',countBy(all,x=>x.format).map(([g,n])=>[g,`${g} (${n})`]));
@@ -674,6 +702,7 @@ async function openDetail(x){
     ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}
     ${plays(x.id).n?`<dt>Played in Crate</dt><dd>${plays(x.id).n} time${plays(x.id).n>1?'s':''} · last ${esc(ago(plays(x.id).last))}</dd>`:''}
     ${notesHTML(x)}</dl>
+    <p class="attrib" style="text-align:left;padding:0;margin:4px 0 10px"><a href="https://www.discogs.com/release/${encodeURIComponent(x.id)}" target="_blank" rel="noopener">Data provided by Discogs.</a></p>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
     <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(serviceURL(x))}" target="_blank" rel="noopener">${svcIcon()}${esc(inCrate()?'Play':playLabel())}</a>
     ${inCrate()?`<button class="hint" data-rematch="${esc(x.inst)}" style="background:none;border:0;padding:8px 0;margin:4px 0 0;text-decoration:underline;color:var(--dim)">Wrong album? Pick a different Spotify version</button>`:''}
@@ -711,13 +740,16 @@ function openSettings(){
   const c=store.get('cache')||{},S=window.CrateSpotify;
   const spOn=S&&S.connected();
   window.Crate.openSheet(`<h4>Settings</h4>
-  <div class="sect"><h5>Discogs</h5><p class="sp-note">Signed in as <b style="color:var(--ink)">${esc(creds.user||'')}</b> · ${all.length} records · updated ${esc(ago(c.at))}.${creds.token?' Using your access token.':''}</p>
+  <div class="sect"><h5>Discogs</h5><p class="sp-note">Signed in as <b style="color:var(--ink)">${esc(creds.user||'')}</b> · ${all.length} records · ${loading?'loading now':'updated '+esc(ago(c.at))}.${creds.token?' Using your access token.':''}</p>
   <label class="field" style="margin-top:12px"><span>${creds.token?'Personal access token (saved)':'Add a personal access token for grading, notes and value'}</span><input id="sTok" type="password" autocomplete="off" placeholder="${creds.token?'••••••••  paste a new one to replace':'From Discogs → Settings → Developers'}"></label>
+  ${creds.token?'':`<details class="howto" style="margin:-4px 0 12px"><summary>How do I get a token?</summary><ol class="steps"><li>Sign in at <a href="https://www.discogs.com/settings/developers" target="_blank" rel="noopener">discogs.com/settings/developers</a>.</li><li>Click <b>Generate new token</b>.</li><li>Copy the long code it shows and paste it above.</li></ol><p class="hint">Crate only reads your collection with it. You can delete the token on that same Discogs page at any time.</p></details>`}
   <button class="btn ghost" id="sTokSave" style="margin-bottom:10px">Save token</button>
   <div class="row2"><button class="btn ghost" id="sFull">Reload everything</button><button class="btn ghost" id="sOut">Switch account</button></div></div>
   <div class="sect"><h5>Music</h5><p class="sp-note">Play buttons open albums in:</p>
   ${servicePicker()}
   ${svc()==='spotify'?(spOn?'<p class="sp-note">Albums play right here in Crate, with the Now Playing screen.</p><button class="btn spot" id="sSpot">Spotify settings</button>':'<p class="sp-note">Opens albums in the Spotify app. With Spotify Premium you can make them play inside Crate instead, with the spinning record and Now Playing screen.</p><button class="btn spot" id="sSpot">Set up playing inside Crate</button>'):`<p class="sp-note">Opens a search for the album in ${esc(SERVICES[svc()].name)}. It’s usually the first result.</p>`}</div>
+  <div class="sect"><h5>About Crate</h5><p class="sp-note">Free, with no ads or tracking. Everything stays on this device. <a href="privacy.html" style="color:var(--ink)">Privacy</a> · <a href="https://github.com/tourdesteve/crate/issues" target="_blank" rel="noopener" style="color:var(--ink)">Send feedback</a></p>
+  <p class="legal" style="margin-top:6px">This application uses Discogs’ API but is not affiliated with, sponsored or endorsed by Discogs. “Discogs” is a trademark of Zink Media, LLC. Spotify is a trademark of Spotify AB; Crate is not affiliated with Spotify. Other service names are trademarks of their owners.</p></div>
   <button class="btn ghost" id="sClose" style="margin-top:18px">Close</button>`);
   $('#sFull').onclick=()=>{closeDetail();load(true)};
   $('#sTokSave').onclick=async()=>{
@@ -750,7 +782,7 @@ $('#panel').addEventListener('touchend',e=>{if($('#panel').scrollTop<=0&&e.chang
 function setMode(m,silent){
   mode=m;store.set('view',m);
   document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===m));
-  $('#shelf').classList.toggle('hidden',m!=='shelf');$('#grid').classList.toggle('hidden',m!=='grid'&&m!=='wall');$('#stats').classList.toggle('hidden',m!=='stats');
+  $('#shelf').classList.toggle('hidden',m!=='shelf');$('#grid').classList.toggle('hidden',m!=='grid'&&m!=='wall');$('#stats').classList.toggle('hidden',m!=='stats');$('#attribFoot').classList.toggle('hidden',m==='shelf');
   $('#backdrop').style.opacity=m==='shelf'?1:.5;
   if(!silent)render(view[cur]?.inst);
 }
@@ -775,7 +807,7 @@ if(creds.user||creds.token){
     all=c.items;folders=c.folders||{};fields=c.fields||{};boot();
     const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p);
     if(c.v!==CACHE_V)setTimeout(()=>load(true,true),2500);
-    else if(Date.now()-(c.at||0)>30*60000)setTimeout(()=>quickSync(true),1500);
+    else setTimeout(freshen,1500);
   }else load(true);
 }
 }

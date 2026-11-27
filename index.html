@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-title" content="Crate">
 <meta name="theme-color" content="#0e0f13">
 <title>Crate</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Archivo+Narrow:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -48,11 +51,22 @@ header{position:sticky;top:0;z-index:5;padding:calc(10px + var(--safeT)) 16px 10
 .toprow h2 small{font:500 13px Archivo;color:var(--dim);margin-left:6px}
 .icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;flex:none}
 .icon svg{width:20px;height:20px}
-.controls{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.controls::-webkit-scrollbar{display:none}
-.controls>*{flex:none}
-#q{width:180px;height:40px;border-radius:20px;border:1px solid var(--line);background:var(--panel);padding:0 14px;font-size:16px}
-select{height:40px;border-radius:20px;border:1px solid var(--line);background:var(--panel);padding:0 12px;font-size:14px;appearance:none;-webkit-appearance:none}
+.icon.spin svg{animation:spin 1s linear infinite}
+header .seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.searchrow{display:flex;gap:8px}
+#q{flex:1;width:auto;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--panel);padding:0 16px;font-size:16px}
+.pill{flex:none;height:44px;border-radius:22px;border:1px solid var(--line);background:var(--panel);padding:0 16px;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600}
+.pill.on{border-color:var(--hot)}
+#fCount:not(:empty){min-width:20px;height:20px;border-radius:10px;background:var(--hot);color:#fff;font-size:12px;display:grid;place-items:center;padding:0 5px}
+#chips{display:flex;flex-wrap:wrap;gap:6px}
+#chips:empty{display:none}
+#chips button{height:32px;border-radius:16px;border:1px solid var(--line);background:var(--panel);padding:0 10px 0 12px;font-size:13px;display:flex;align-items:center;gap:6px}
+#chips button span{color:var(--dim);font-size:15px;line-height:1}
+#chips .clr{border:0;background:none;color:var(--dim);text-decoration:underline}
+select{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239a9ca6' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;padding:0 36px 0 14px;font-size:16px;appearance:none;-webkit-appearance:none}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px;margin-top:14px}
+.sect{border-top:1px solid var(--line);padding:16px 0 4px;margin-top:12px}
+.sect h5{font:700 15px Archivo;margin:0 0 6px}
 .seg{display:flex;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--panel)}
 .seg button{height:38px;padding:0 14px;border:0;background:none;font-size:14px;font-weight:600;color:var(--dim)}
 .seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
@@ -114,10 +128,10 @@ select{height:40px;border-radius:20px;border:1px solid var(--line);background:va
 .bar.click{cursor:pointer}
 
 /* detail sheet */
-#sheet{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
-#sheet.open{opacity:1;pointer-events:auto}
+#sheet,#fsheet{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#sheet.open,#fsheet.open{opacity:1;pointer-events:auto}
 .panel{width:min(640px,100%);max-height:92vh;overflow-y:auto;background:var(--panel);border-radius:22px 22px 0 0;padding:16px 20px calc(28px + var(--safeB));transform:translateY(40px);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
-#sheet.open .panel{transform:none}
+#sheet.open .panel,#fsheet.open .panel{transform:none}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px}
 .hero{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .hero .art{width:min(100%,360px);aspect-ratio:1;margin:0 auto;border-radius:6px;overflow:hidden;box-shadow:0 20px 50px #000a;background:#222}
@@ -140,7 +154,7 @@ dt{color:var(--dim)}dd{margin:0}
 .toast{position:fixed;left:50%;bottom:calc(24px + var(--safeB));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
-@media(prefers-reduced-motion:reduce){.logo{animation:none}.disc,.panel,#sheet{transition:none}}
+@media(prefers-reduced-motion:reduce){.logo{animation:none}.disc,.panel,#sheet,#fsheet{transition:none}}
 </style>
 </head>
 <body>
@@ -165,32 +179,20 @@ dt{color:var(--dim)}dd{margin:0}
     <div class="toprow">
       <h2>Crate<small id="count"></small></h2>
       <button class="icon" id="shuffle" title="Pick something to play" aria-label="Pick a random record"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg></button>
-      <button class="icon" id="spBtn" title="Spotify" aria-label="Spotify connection"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7.2 9.6c3.3-.9 6.9-.6 9.6.9M7.7 12.6c2.7-.7 5.5-.5 7.9.8M8.2 15.4c2.1-.5 4.2-.3 6 .6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></button>
-      <button class="icon" id="refresh" title="Reload from Discogs" aria-label="Reload from Discogs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></button>
-      <button class="icon" id="logout" title="Switch account" aria-label="Switch account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+      <button class="icon" id="refresh" title="Check Discogs for new records" aria-label="Check Discogs for new records"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg></button>
+      <button class="icon" id="settingsBtn" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
-    <div class="controls">
-      <div class="seg" role="group" aria-label="View">
-        <button data-v="shelf" aria-pressed="true">Shelf</button>
-        <button data-v="grid" aria-pressed="false">Grid</button>
-        <button data-v="wall" aria-pressed="false">Wall</button>
-        <button data-v="stats" aria-pressed="false">Stats</button>
-      </div>
-      <input id="q" type="search" placeholder="Search artist, title, label" aria-label="Search">
-      <select id="sort" aria-label="Sort">
-        <option value="artist">Artist A–Z</option>
-        <option value="title">Title A–Z</option>
-        <option value="added">Recently added</option>
-        <option value="yearAsc">Oldest first</option>
-        <option value="yearDesc">Newest first</option>
-        <option value="rating">My rating</option>
-        <option value="random">Shuffled</option>
-      </select>
-      <select id="fGenre" aria-label="Genre"><option value="">All genres</option></select>
-      <select id="fFormat" aria-label="Format"><option value="">All formats</option></select>
-      <select id="fDecade" aria-label="Decade"><option value="">All decades</option></select>
-      <select id="fFolder" aria-label="Folder"><option value="">All folders</option></select>
+    <div class="seg" role="group" aria-label="View">
+      <button data-v="shelf" aria-pressed="true">Shelf</button>
+      <button data-v="grid" aria-pressed="false">Grid</button>
+      <button data-v="wall" aria-pressed="false">Wall</button>
+      <button data-v="stats" aria-pressed="false">Stats</button>
     </div>
+    <div class="searchrow">
+      <input id="q" type="search" placeholder="Search artist, title, label" aria-label="Search" autocapitalize="off" spellcheck="false">
+      <button class="pill" id="filterBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<span id="fCount"></span></button>
+    </div>
+    <div id="chips"></div>
   </header>
 
   <div id="shelf">
@@ -208,13 +210,33 @@ dt{color:var(--dim)}dd{margin:0}
   <div id="stats" class="hidden"></div>
 </section>
 
+<div id="fsheet" aria-hidden="true"><div class="panel" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <div class="grab"></div>
+  <h4 id="fTitle">Sort &amp; filter</h4>
+  <div class="fgrid">
+    <label class="field"><span>Sort by</span><select id="sort">
+      <option value="artist">Artist A–Z</option>
+      <option value="title">Title A–Z</option>
+      <option value="added">Recently added</option>
+      <option value="yearAsc">Oldest first</option>
+      <option value="yearDesc">Newest first</option>
+      <option value="rating">My rating</option>
+      <option value="random">Shuffled</option>
+    </select></label>
+    <label class="field"><span>Genre</span><select id="fGenre"><option value="">All genres</option></select></label>
+    <label class="field"><span>Format</span><select id="fFormat"><option value="">All formats</option></select></label>
+    <label class="field"><span>Decade</span><select id="fDecade"><option value="">All decades</option></select></label>
+    <label class="field" id="folderField"><span>Folder</span><select id="fFolder"><option value="">All folders</option></select></label>
+  </div>
+  <div class="row2"><button class="btn ghost" id="fClear">Clear all</button><button class="btn" id="fDone">Show records</button></div>
+</div></div>
 <div id="sheet" aria-hidden="true"><div class="panel" role="dialog" aria-modal="true" id="panel"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
 {
 /* auto-update: reload when a newer version is published */
-const BUILD='1795719497';
+const BUILD='1795748663';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -288,11 +310,38 @@ async function load(force){
       if(page<=pages)await sleep(creds.token?1100:2500);
     }while(page<=pages);
     all=items;store.set('cache',{user:creds.user,items,folders,at:Date.now()});
-    err.textContent='';boot();if(force)toast('Collection refreshed');
+    const keep=view[cur]?.inst,wasOpen=!$('#app').classList.contains('hidden');err.textContent='';boot(keep);if(wasOpen)toast('Collection reloaded');
   }catch(e){
     if(!$('#app').classList.contains('hidden'))toast(e.message);
     else err.textContent=e.message;
   }finally{$('#go').disabled=false;prog.classList.add('hidden')}
+}
+
+/* quick sync: fetch only records added since last time */
+let syncing=false;
+async function quickSync(silent){
+  if(syncing)return;
+  const cache=store.get('cache');
+  if(!cache||cache.user!==creds.user||!all.length)return load(true);
+  syncing=true;$('#refresh').classList.add('spin');
+  try{
+    const u=encodeURIComponent(creds.user),known=new Set(all.map(x=>x.inst));
+    let page=1,pages=1,fresh=[],total=0,hitKnown=false;
+    do{
+      const d=await api(`/users/${u}/collection/folders/0/releases?per_page=100&page=${page}&sort=added&sort_order=desc`);
+      pages=d.pagination?.pages||1;total=d.pagination?.items??0;
+      for(const r of d.releases||[]){if(known.has(r.instance_id)){hitKnown=true;break}fresh.push(normalize(r))}
+      page++;
+      if(!hitKnown&&page<=pages)await sleep(creds.token?1100:2500);
+    }while(!hitKnown&&page<=pages);
+    const merged=fresh.concat(all);
+    if(merged.length!==total){syncing=false;$('#refresh').classList.remove('spin');if(!silent)toast('Your collection changed, reloading everything…');return load(true)}
+    const keep=view[cur]?.inst;
+    all=merged;store.set('cache',{...cache,items:all,at:Date.now()});
+    if(fresh.length){boot(keep);toast(fresh.length===1?'1 new record: '+fresh[0].title:fresh.length+' new records added')}
+    else if(!silent)toast('Up to date');
+  }catch(e){if(!silent)toast(e.message)}
+  finally{syncing=false;$('#refresh').classList.remove('spin')}
 }
 
 function fillSelect(sel,label,vals){
@@ -303,16 +352,16 @@ function fillSelect(sel,label,vals){
 const countBy=(arr,fn)=>{const m={};arr.forEach(x=>[].concat(fn(x)).forEach(k=>{if(k!=null&&k!=='')m[k]=(m[k]||0)+1}));return Object.entries(m).sort((a,b)=>b[1]-a[1])};
 const decadeOf=y=>y?Math.floor(y/10)*10:null;
 
-function boot(){
+function boot(keepId){
   $('#login').classList.add('hidden');$('#app').classList.remove('hidden');
   fillSelect($('#fGenre'),'All genres',countBy(all,x=>x.genres).map(([g,n])=>[g,`${g} (${n})`]));
   fillSelect($('#fFormat'),'All formats',countBy(all,x=>x.format).map(([g,n])=>[g,`${g} (${n})`]));
   fillSelect($('#fDecade'),'All decades',countBy(all,x=>decadeOf(x.year)).sort((a,b)=>a[0]-b[0]).map(([d,n])=>[d,`${d}s (${n})`]));
   const fl=countBy(all,x=>x.folder).filter(([id])=>folders[id]);
-  $('#fFolder').classList.toggle('hidden',fl.length<2);
+  $('#folderField').classList.toggle('hidden',fl.length<2);
   fillSelect($('#fFolder'),'All folders',fl.map(([id,n])=>[id,`${folders[id]} (${n})`]));
   const st=store.get('filters');if(st){for(const k in st){const el=$('#'+k);if(el&&[...(el.options||[{value:st[k]}])].some(o=>o.value===st[k]))el.value=st[k]}}
-  setMode(mode,true);apply();
+  setMode(mode,true);apply(keepId);
 }
 
 let seed=Math.random();
@@ -332,6 +381,14 @@ function apply(keepId){
   };
   view.sort(by[s]||by.artist);
   $('#count').textContent=view.length===all.length?`${all.length} records`:`${view.length} of ${all.length}`;
+  const sortName={title:'Title A–Z',added:'Recently added',yearAsc:'Oldest first',yearDesc:'Newest first',rating:'My rating',random:'Shuffled'};
+  const chips=[[ 'fGenre',g,g],['fFormat',f,f],['fDecade',d,d&&d+'s'],['fFolder',fo,folders[fo]]].filter(c=>c[1]);
+  $('#fCount').textContent=chips.length||'';$('#filterBtn').classList.toggle('on',chips.length>0);
+  const all2=chips.map(c=>`<button data-clear="${c[0]}" aria-label="Remove ${esc(c[2])} filter">${esc(c[2])}<span aria-hidden="true">×</span></button>`);
+  if(sortName[s])all2.push(`<button data-clear="sort" aria-label="Reset sort">${esc(sortName[s])}<span aria-hidden="true">×</span></button>`);
+  if(chips.length>1)all2.push('<button class="clr" data-clear="all">Clear all</button>');
+  $('#chips').innerHTML=all2.join('');
+  $('#fDone').textContent=view.length?`Show ${view.length} record${view.length===1?'':'s'}`:'No matches';
   render(keepId);
 }
 function hash(n){const x=Math.sin((n||1)*9301+seed*49297)*233280;return x-Math.floor(x)}
@@ -410,6 +467,7 @@ $('#prev').onclick=()=>goTo(cur-1);$('#next').onclick=()=>goTo(cur+1);
 $('#openCur').onclick=()=>view[cur]&&openDetail(view[cur]);
 $('#scrub').addEventListener('input',e=>{const i=+e.target.value;if(i<base||i>=base+WINDOW)buildWindow(i);else goTo(i,false)});
 document.addEventListener('keydown',e=>{
+  if($('#fsheet').classList.contains('open')){if(e.key==='Escape')closeFilters();return}
   if($('#sheet').classList.contains('open')){if(e.key==='Escape')closeDetail();return}
   if(mode!=='shelf'||e.target.matches('input,select'))return;
   if(e.key==='ArrowRight'){goTo(cur+1);e.preventDefault()}
@@ -487,6 +545,37 @@ async function openDetail(x){
 }
 function closeDetail(){$('#sheet').classList.remove('open');$('#sheet').setAttribute('aria-hidden','true')}
 $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeDetail()});
+/* filters */
+function openFilters(){$('#fsheet').classList.add('open');$('#fsheet').setAttribute('aria-hidden','false')}
+function closeFilters(){$('#fsheet').classList.remove('open');$('#fsheet').setAttribute('aria-hidden','true');$('#filterBtn').focus({preventScroll:true})}
+function clearFilter(k){
+  const ids=k==='all'?['fGenre','fFormat','fDecade','fFolder']:[k];
+  ids.forEach(id=>{$('#'+id).value=id==='sort'?'artist':''});
+  apply();
+}
+$('#filterBtn').onclick=openFilters;
+$('#fDone').onclick=()=>{closeFilters();scrollTo(0,0)};
+$('#fClear').onclick=()=>{['fGenre','fFormat','fDecade','fFolder'].forEach(id=>$('#'+id).value='');$('#sort').value='artist';apply()};
+$('#fsheet').addEventListener('click',e=>{if(e.target.id==='fsheet')closeFilters()});
+$('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-clear]');if(b)clearFilter(b.dataset.clear)});
+
+/* settings */
+const ago=t=>{if(!t)return'never';const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+function openSettings(){
+  const c=store.get('cache')||{},S=window.CrateSpotify;
+  const spOn=S&&S.connected();
+  window.Crate.openSheet(`<h4>Settings</h4>
+  <div class="sect"><h5>Discogs</h5><p class="sp-note">Signed in as <b style="color:var(--ink)">${esc(creds.user||'')}</b> · ${all.length} records · updated ${esc(ago(c.at))}.${creds.token?' Using your access token.':''}</p>
+  <div class="row2"><button class="btn ghost" id="sFull">Reload everything</button><button class="btn ghost" id="sOut">Switch account</button></div></div>
+  <div class="sect"><h5>Spotify</h5><p class="sp-note">${spOn?'Connected. Play buttons play albums right here in Crate.':'Not connected. Connect to play albums from your collection.'}</p>
+  <button class="btn spot" id="sSpot">${spOn?'Spotify settings':'Connect Spotify'}</button></div>
+  <button class="btn ghost" id="sClose" style="margin-top:18px">Close</button>`);
+  $('#sFull').onclick=()=>{closeDetail();load(true)};
+  $('#sOut').onclick=()=>{closeDetail();signOut()};
+  $('#sSpot').onclick=()=>{if(S)S.open()};
+  $('#sClose').onclick=closeDetail;
+}
+$('#settingsBtn').onclick=openSettings;
 let ty=0;$('#panel').addEventListener('touchstart',e=>{ty=e.touches[0].clientY},{passive:true});
 $('#panel').addEventListener('touchend',e=>{if($('#panel').scrollTop<=0&&e.changedTouches[0].clientY-ty>90)closeDetail()},{passive:true});
 
@@ -502,12 +591,12 @@ document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{const keep=vi
 let qt;$('#q').addEventListener('input',()=>{clearTimeout(qt);qt=setTimeout(()=>apply(),180)});
 ['sort','fGenre','fFormat','fDecade','fFolder'].forEach(id=>$('#'+id).addEventListener('change',()=>{if(id==='sort'&&$('#sort').value==='random')seed=Math.random();apply()}));
 $('#shuffle').onclick=()=>{if(!view.length)return;const i=Math.floor(Math.random()*view.length);if(mode!=='shelf'){setMode('shelf',true);renderShelf(view[i].inst)}else goTo(i,Math.abs(i-cur)<40);setTimeout(()=>toast('Put this one on: '+view[i].title),400)};
-$('#refresh').onclick=()=>load(true);
-$('#logout').onclick=()=>{store.del('cache');store.del('creds');store.del('pos');creds={};all=[];$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#user').value='';$('#token').value=''};
+$('#refresh').onclick=()=>quickSync(false);
+function signOut(){store.del('cache');store.del('creds');store.del('pos');creds={};all=[];$('#app').classList.add('hidden');$('#login').classList.remove('hidden');$('#user').value='';$('#token').value=''}
 $('#loginForm').addEventListener('submit',e=>{e.preventDefault();creds={user:$('#user').value.trim(),token:$('#token').value.trim()};store.set('creds',creds);load(true)});
 
 /* start */
-if(creds.user||creds.token){$('#user').value=creds.user||'';const c=store.get('cache');if(c&&c.user===creds.user){all=c.items;folders=c.folders||{};boot();const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p)}else load(true)}
+if(creds.user||creds.token){$('#user').value=creds.user||'';const c=store.get('cache');if(c&&c.user===creds.user){all=c.items;folders=c.folders||{};boot();const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p);if(Date.now()-(c.at||0)>30*60000)setTimeout(()=>quickSync(true),1500)}else load(true)}
 }
 </script>
 <style>
@@ -788,8 +877,8 @@ async function runDiag(){
   try{const st=await api('/me/player');w('Now: '+(st?.item?(st.is_playing?'playing ':'paused ')+st.item.name+' on '+st.device?.name:'nothing playing'))}catch(e){w('✗ Player: '+e.message+' ('+e.status+')')}
   w('Last play error: '+(store.get('spLastErr')||'none'));
 }
-$('#spBtn').onclick=openConnect;
-function updateUI(){$('#spBtn').style.color=connected()?'#1db954':''}
+window.CrateSpotify={open:openConnect,connected};
+function updateUI(){}
 
 handleRedirect().then(()=>{updateUI();if(connected()){startPlayer();poll()}});
 }

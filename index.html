@@ -45,7 +45,14 @@ h1{font:800 44px/1.05 Archivo;margin:0 0 6px;letter-spacing:-.02em}
 /* app */
 #app{min-height:100vh}
 #backdrop{position:fixed;inset:-60px;background-size:cover;background-position:center;filter:blur(50px) saturate(1.4) brightness(.45);transition:background-image .4s;z-index:0;pointer-events:none}
-header{position:sticky;top:0;z-index:5;padding:calc(10px + var(--safeT)) 16px 10px;background:linear-gradient(var(--bg) 60%,#0e0f1300);display:flex;flex-direction:column;gap:10px}
+#lbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:transparent;opacity:0;transition:opacity .3s}
+#lbar.on{opacity:1}
+#lbar i{display:block;height:100%;width:0;background:var(--hot);transition:width .4s}
+.skel{display:block;border-radius:4px;background:linear-gradient(100deg,#1b1d24 30%,#262934 50%,#1b1d24 70%) 0 0/300% 100%;animation:shim 1.4s linear infinite}
+.sline{display:inline-block;height:.9em;vertical-align:middle;border-radius:6px}
+@keyframes shim{from{background-position:100% 0}to{background-position:-200% 0}}
+.tile .cv,.sleeve{background:linear-gradient(100deg,#1b1d24 30%,#23262f 50%,#1b1d24 70%) 0 0/300% 100%}
+header{position:sticky;top:0;z-index:5;padding:calc(10px + var(--safeT)) 16px 10px;background:rgba(14,15,19,.9);-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);border-bottom:1px solid #ffffff0d;padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
 .toprow{display:flex;align-items:center;gap:10px}
 .toprow h2{font:800 24px/1 Archivo;margin:0;flex:1;letter-spacing:-.01em}
 .toprow h2 small{font:500 13px Archivo;color:var(--dim);margin-left:6px}
@@ -115,7 +122,7 @@ select{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);ba
 
 /* stats */
 #stats{position:relative;z-index:1;padding:8px 16px calc(40px + var(--safeB));max-width:900px;margin:0 auto}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:24px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:24px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
 .kpi b{display:block;font:800 30px/1 Archivo}
 .kpi span{font-size:13px;color:var(--dim)}
@@ -126,6 +133,17 @@ select{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);ba
 .bar .tr i{display:block;height:100%;background:var(--hot);border-radius:6px}
 .bar .c{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
 .bar.click{cursor:pointer}
+.kpis.vals{grid-template-columns:repeat(3,minmax(0,1fr))}
+.vals .kpi{padding:12px}
+.vals .kpi b{font-size:clamp(15px,4.4vw,26px);white-space:nowrap}
+.vals .kpi.hl{border-color:var(--hot)}
+.recent{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.recent::-webkit-scrollbar{display:none}
+.rp{flex:none;width:112px;border:0;background:none;padding:0;text-align:left}
+.rc{display:block;width:112px;height:112px;border-radius:4px;overflow:hidden;background:var(--panel)}
+.rc img{width:100%;height:100%;object-fit:cover}
+.rt{display:block;font-size:13px;font-weight:600;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ra{display:block;font-size:12px;color:var(--dim)}
 
 /* detail sheet */
 #sheet,#fsheet{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -154,6 +172,7 @@ dt{color:var(--dim)}dd{margin:0}
 .sp-on .tracks li{cursor:pointer;border-radius:8px}
 .sp-on .tracks li:hover{background:#ffffff0a}
 .sp-on .tracks li:active{background:#1db95422}
+.grade{display:inline-block;padding:2px 10px;border-radius:12px;border:1px solid var(--g);color:var(--g);font-size:13px;font-weight:600;background:color-mix(in srgb,var(--g) 12%,transparent)}
 .tracks .p{color:var(--dim)}.tracks .d{color:var(--dim);font-variant-numeric:tabular-nums}
 .row2{display:flex;gap:10px;margin-top:16px}
 .row2>*{flex:1;display:grid;place-items:center;text-decoration:none}
@@ -165,7 +184,7 @@ dt{color:var(--dim)}dd{margin:0}
 .toast.on{opacity:1}
 @media(min-width:900px){.hero{grid-template-columns:260px minmax(0,1fr);align-items:start}.hero .art{width:100%}}
 .x{}
-@media(prefers-reduced-motion:reduce){.slot.playing .disc{animation:none;transform:translateX(42%)}.logo{animation:none}.disc,.panel,#sheet,#fsheet{transition:none}}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}.slot.playing .disc{animation:none;transform:translateX(42%)}.logo{animation:none}.disc,.panel,#sheet,#fsheet{transition:none}}
 </style>
 </head>
 <body>
@@ -204,6 +223,7 @@ dt{color:var(--dim)}dd{margin:0}
       <button class="pill" id="filterBtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<span id="fCount"></span></button>
     </div>
     <div id="chips"></div>
+    <div id="lbar"><i></i></div>
   </header>
 
   <div id="shelf">
@@ -237,6 +257,7 @@ dt{color:var(--dim)}dd{margin:0}
     <label class="field"><span>Genre</span><select id="fGenre"><option value="">All genres</option></select></label>
     <label class="field"><span>Format</span><select id="fFormat"><option value="">All formats</option></select></label>
     <label class="field"><span>Decade</span><select id="fDecade"><option value="">All decades</option></select></label>
+    <label class="field"><span>Listening</span><select id="fPlayed"><option value="">All records</option><option value="never">Never played in Crate</option><option value="played">Played in Crate</option></select></label>
     <label class="field" id="folderField"><span>Folder</span><select id="fFolder"><option value="">All folders</option></select></label>
   </div>
   <div class="row2"><button class="btn ghost" id="fClear">Clear all</button><button class="btn" id="fDone">Show records</button></div>
@@ -246,8 +267,10 @@ dt{color:var(--dim)}dd{margin:0}
 
 <script>
 {
+/* save cover images on this device */
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
 /* auto-update: reload when a newer version is published */
-const BUILD='1795804237';
+const BUILD='1795804760';
 (()=>{
   try{const u=new URL(location.href);if(u.searchParams.has('v')&&!u.searchParams.has('code')){u.searchParams.delete('v');history.replaceState(null,'',u.pathname+(u.search||'')+u.hash)}}catch(e){}
   let busy=false;
@@ -295,37 +318,63 @@ function normalize(x){
     year:b.year||0,cover:b.cover_image&&!/spacer\.gif/.test(b.cover_image)?b.cover_image:'',thumb:b.thumb||'',
     genres:b.genres||[],styles:b.styles||[],
     format:fmts[0]?.name||'Other',formatText:fmts.map(f=>[f.qty>1?f.qty+'×':'',f.name,(f.descriptions||[]).join(', ')].filter(Boolean).join(' ')).join(' · '),
-    labels:(b.labels||[]).map(l=>({name:cleanName(l.name),catno:l.catno}))
+    labels:(b.labels||[]).map(l=>({name:cleanName(l.name),catno:l.catno})),
+    notes:(x.notes||[]).filter(n=>n&&String(n.value||'').trim()).map(n=>({f:n.field_id,v:String(n.value)}))
   };
 }
 
-async function load(force){
+const CACHE_V=2;
+let loading=false,fields={};
+async function loadFields(u){
+  try{const f=await api(`/users/${u}/collection/fields`);const m={};(f.fields||[]).forEach(x=>{m[x.id]={name:x.name,type:x.type,pos:x.position}});return m}catch(e){return {}}
+}
+function setLoadBar(frac,text){
+  const lb=$('#lbar');if(!lb)return;
+  lb.classList.toggle('on',frac!=null);if(frac!=null)lb.firstElementChild.style.width=Math.max(4,frac*100)+'%';
+  if(text)$('#count').textContent=text;
+}
+async function load(force,silent){
   const err=$('#err'),prog=$('#progress'),bar=prog.querySelector('i');
   err.textContent='';
   const cached=store.get('cache');
-  if(!force&&cached&&cached.user===creds.user){all=cached.items;folders=cached.folders||{};boot();return}
+  if(!force&&cached&&cached.user===creds.user){all=cached.items;folders=cached.folders||{};fields=cached.fields||{};boot();return}
+  if(loading)return;loading=true;
+  const fresh=!all.length;
   $('#go').disabled=true;prog.classList.remove('hidden');bar.style.width='4%';
   try{
     if(!creds.user&&creds.token){const me=await api('/oauth/identity');creds.user=me.username;store.set('creds',creds)}
     if(!creds.user)throw new Error('Enter your Discogs username.');
     const u=encodeURIComponent(creds.user);
+    if(fresh){$('#login').classList.add('hidden');$('#app').classList.remove('hidden');setMode(mode,true);skeleton()}
+    setLoadBar(.03,silent?null:'Loading…');
     try{const f=await api(`/users/${u}/collection/folders`);folders={};(f.folders||[]).forEach(x=>{if(x.id)folders[x.id]=x.name})}catch(e){folders={}}
-    let page=1,pages=1,items=[];
+    fields=await loadFields(u);
+    let page=1,pages=1,items=[],total=0;
     do{
       const d=await api(`/users/${u}/collection/folders/0/releases?per_page=100&page=${page}&sort=added&sort_order=desc`);
-      pages=d.pagination?.pages||1;
+      pages=d.pagination?.pages||1;total=d.pagination?.items||0;
       items=items.concat((d.releases||[]).map(normalize));
       bar.style.width=Math.max(4,page/pages*100)+'%';
-      $('#err').textContent=`Loaded ${items.length} of ${d.pagination?.items||items.length} records…`;
+      setLoadBar(page/pages,silent?null:`Loading ${items.length.toLocaleString()} of ${(total||items.length).toLocaleString()}…`);
+      if(fresh&&page===1){all=items.slice();boot()}
       page++;
       if(page<=pages)await sleep(creds.token?1100:2500);
     }while(page<=pages);
-    all=items;store.set('cache',{user:creds.user,items,folders,at:Date.now()});
-    const keep=view[cur]?.inst,wasOpen=!$('#app').classList.contains('hidden');err.textContent='';boot(keep);if(wasOpen)toast('Collection reloaded');
+    const keep=view[cur]?.inst;
+    all=items;store.set('cache',{v:CACHE_V,user:creds.user,items,folders,fields,at:Date.now()});
+    err.textContent='';boot(keep);
+    if(!fresh&&!silent)toast('Collection reloaded');
   }catch(e){
-    if(!$('#app').classList.contains('hidden'))toast(e.message);
+    if(!$('#app').classList.contains('hidden')){if(!silent)toast(e.message);if(!all.length){$('#app').classList.add('hidden');$('#login').classList.remove('hidden');err.textContent=e.message}}
     else err.textContent=e.message;
-  }finally{$('#go').disabled=false;prog.classList.add('hidden')}
+  }finally{loading=false;$('#go').disabled=false;prog.classList.add('hidden');setLoadBar(null)}
+}
+function skeleton(){
+  const sk='<div class="skel" style="width:100%;height:100%"></div>';
+  $('#flow').innerHTML=[0,1,2].map(()=>`<div class="slot"><div class="sleeve">${sk}</div></div>`).join('');
+  $('#np').innerHTML='<p class="t"><span class="skel sline" style="width:55%"></span></p><p class="a"><span class="skel sline" style="width:35%"></span></p>';
+  $('#grid').innerHTML=Array.from({length:12},()=>`<div class="tile"><div class="cv">${sk}</div><div class="t"><span class="skel sline" style="width:80%"></span></div><div class="a"><span class="skel sline" style="width:50%"></span></div></div>`).join('');
+  requestAnimationFrame(()=>{const f=$('#flow');const m=f.children[1];if(m)f.scrollLeft=m.offsetLeft-(f.clientWidth-m.offsetWidth)/2});
 }
 
 /* quick sync: fetch only records added since last time */
@@ -377,9 +426,10 @@ function boot(keepId){
 
 let seed=Math.random();
 function apply(keepId){
+  const pl=$('#fPlayed').value,playedSet=new Set(getPlays().map(p=>p.id));
   const q=$('#q').value.trim().toLowerCase(),g=$('#fGenre').value,f=$('#fFormat').value,d=$('#fDecade').value,fo=$('#fFolder').value,s=$('#sort').value;
-  store.set('filters',{sort:s,fGenre:g,fFormat:f,fDecade:d,fFolder:fo});
-  view=all.filter(x=>(!g||x.genres.includes(g))&&(!f||x.format===f)&&(!d||String(decadeOf(x.year))===d)&&(!fo||String(x.folder)===fo)&&
+  store.set('filters',{sort:s,fGenre:g,fFormat:f,fDecade:d,fFolder:fo,fPlayed:pl});
+  view=all.filter(x=>(!pl||(pl==='never')!==playedSet.has(x.id))&&(!g||x.genres.includes(g))&&(!f||x.format===f)&&(!d||String(decadeOf(x.year))===d)&&(!fo||String(x.folder)===fo)&&
     (!q||(x.artist+' '+x.title+' '+x.labels.map(l=>l.name+' '+l.catno).join(' ')+' '+x.styles.join(' ')+' '+x.year).toLowerCase().includes(q)));
   const by={
     artist:(a,b)=>a.sortArtist.localeCompare(b.sortArtist)||(a.year||9999)-(b.year||9999),
@@ -393,7 +443,7 @@ function apply(keepId){
   view.sort(by[s]||by.artist);
   $('#count').textContent=view.length===all.length?`${all.length} records`:`${view.length} of ${all.length}`;
   const sortName={title:'Title A–Z',added:'Recently added',yearAsc:'Oldest first',yearDesc:'Newest first',rating:'My rating',random:'Shuffled'};
-  const chips=[[ 'fGenre',g,g],['fFormat',f,f],['fDecade',d,d&&d+'s'],['fFolder',fo,folders[fo]]].filter(c=>c[1]);
+  const chips=[[ 'fGenre',g,g],['fFormat',f,f],['fDecade',d,d&&d+'s'],['fFolder',fo,folders[fo]],['fPlayed',pl,pl==='never'?'Never played':'Played']].filter(c=>c[1]);
   $('#fCount').textContent=chips.length||'';$('#filterBtn').classList.toggle('on',chips.length>0);
   const all2=chips.map(c=>`<button data-clear="${c[0]}" aria-label="Remove ${esc(c[2])} filter">${esc(c[2])}<span aria-hidden="true">×</span></button>`);
   if(sortName[s])all2.push(`<button data-clear="sort" aria-label="Reset sort">${esc(sortName[s])}<span aria-hidden="true">×</span></button>`);
@@ -525,13 +575,59 @@ function renderStats(){
     <div class="kpi"><b>${oldest?oldest.year:'—'}</b><span>oldest pressing year</span></div>
     <div class="kpi"><b>${yrs.length?Math.round(yrs.reduce((a,b)=>a+b,0)/yrs.length):'—'}</b><span>average release year</span></div>
   </div>
+  <h3>Collection value</h3><div id="valueBox">${creds.token?'<p class="hint">Asking Discogs…</p>':'<p class="hint">Add your Discogs access token in Settings to see what your collection is worth.</p>'}</div>
+  ${listeningHTML(v)}
   <h3>By decade</h3>${bars(decades,'fDecade',d=>d+'s',20)}
   <h3>Top genres</h3>${bars(genres,'fGenre')}
   <h3>Top styles</h3>${bars(styles,'')}
   <h3>Most-owned artists</h3>${bars(artists,'q')}
   <h3>Top labels</h3>${bars(labels,'q')}`;
+  if(creds.token)loadValue();
 }
-$('#stats').addEventListener('click',e=>{const b=e.target.closest('.bar.click');if(!b)return;const el=$('#'+b.dataset.k);el.value=b.dataset.v;setMode('grid');apply()});
+let valueMem=null;
+async function loadValue(){
+  const box=$('#valueBox');if(!box)return;
+  try{
+    if(!valueMem||Date.now()-valueMem.at>3600000){const v=await api(`/users/${encodeURIComponent(creds.user)}/collection/value`);valueMem={...v,at:Date.now()}}
+    if(!$('#valueBox'))return;
+    $('#valueBox').innerHTML=`<div class="kpis vals"><div class="kpi"><b>${esc(valueMem.minimum)}</b><span>low estimate</span></div><div class="kpi hl"><b>${esc(valueMem.median)}</b><span>median value</span></div><div class="kpi"><b>${esc(valueMem.maximum)}</b><span>high estimate</span></div></div><p class="hint">Whole collection, based on Discogs Marketplace sales. Filters don’t change it.</p>`;
+  }catch(e){if($('#valueBox'))$('#valueBox').innerHTML=`<p class="hint">${esc(e.message)}</p>`}
+}
+function listeningHTML(v){
+  const log=getPlays(),inView=new Set(v.map(x=>x.id));
+  const counts={};log.forEach(p=>{if(inView.has(p.id))counts[p.id]=(counts[p.id]||0)+1});
+  const never=v.filter(x=>!counts[x.id]).length;
+  const recent=[];const seen=new Set();
+  for(let i=log.length-1;i>=0&&recent.length<8;i--){const p=log[i];if(seen.has(p.id)||!inView.has(p.id))continue;seen.add(p.id);const x=all.find(r=>r.id===p.id);if(x)recent.push([x,p.at])}
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,n])=>[all.find(r=>r.id===+id),n]).filter(r=>r[0]);
+  const max=top[0]?top[0][1]:1;
+  return `<h3>Listening</h3>
+  <div class="kpis"><div class="kpi"><b>${log.filter(p=>inView.has(p.id)).length}</b><span>plays in Crate</span></div><div class="kpi"><b>${v.length-never}</b><span>records played</span></div><div class="kpi"><b>${never}</b><span>never played</span></div></div>
+  ${never?`<button class="btn ghost" id="showNever" style="margin-bottom:8px">Show the ${never} I’ve never played</button>`:''}
+  ${recent.length?`<h3>Recently played</h3><div class="recent">${recent.map(([x,at])=>`<button class="rp" data-inst="${esc(x.inst)}"><span class="rc">${x.thumb?`<img src="${esc(x.thumb)}" alt="" loading="lazy">`:''}</span><span class="rt">${esc(x.title)}</span><span class="ra">${esc(ago(at))}</span></button>`).join('')}</div>`:'<p class="hint">Nothing played yet. Albums you play from Crate show up here.</p>'}
+  ${top.length?`<h3>Most played</h3>${top.map(([x,n])=>`<div class="bar click" data-k="detail" data-v="${esc(x.inst)}"><span class="n">${esc(x.title)}</span><span class="tr"><i style="width:${(n/max*100).toFixed(1)}%"></i></span><span class="c">${n}</span></div>`).join('')}`:''}
+  <p class="hint">The listening log is kept on this device.</p>`;
+}
+$('#stats').addEventListener('click',e=>{
+  if(e.target.closest('#showNever')){$('#fPlayed').value='never';setMode('grid',true);apply();scrollTo(0,0);return}
+  const rp=e.target.closest('.rp');if(rp){const x=all.find(r=>String(r.inst)===rp.dataset.inst);if(x)openDetail(x);return}
+  const b=e.target.closest('.bar.click');if(!b)return;
+  if(b.dataset.k==='detail'){const x=all.find(r=>String(r.inst)===b.dataset.v);if(x)openDetail(x);return}const el=$('#'+b.dataset.k);el.value=b.dataset.v;setMode('grid');apply()});
+
+/* ---- grading & notes ---- */
+const GRADE=[[/^m(int)?\b|\(m\)/i,'#1ed760'],[/near mint|nm/i,'#1ed760'],[/very good plus|vg\+/i,'#a3e635'],[/very good|\bvg\b/i,'#facc15'],[/good plus|g\+/i,'#fb923c'],[/good|\bg\b/i,'#fb923c'],[/fair|poor|\bf\b|\bp\b/i,'#f87171'],[/generic|no cover/i,'#9a9ca6']];
+const gradeColor=v=>(GRADE.find(([r])=>r.test(v))||[0,'#9a9ca6'])[1];
+function notesHTML(x){
+  if(!x.notes||!x.notes.length)return'';
+  return x.notes.map(n=>{
+    const f=fields[n.f]||{},name=(f.name||'Note').replace(/\s*condition$/i,'');
+    const isGrade=/condition/i.test(f.name||'')||f.type==='dropdown';
+    return `<dt>${esc(name)}</dt><dd>${isGrade?`<span class="grade" style="--g:${gradeColor(n.v)}">${esc(n.v)}</span>`:`<span style="white-space:pre-wrap">${esc(n.v)}</span>`}</dd>`;
+  }).join('');
+}
+/* ---- listening log (kept on this device) ---- */
+const getPlays=()=>store.get('plays')||[];
+function plays(id){const l=getPlays().filter(p=>p.id===id);return{n:l.length,last:l.length?l[l.length-1].at:0}}
 
 /* ---- detail ---- */
 async function openDetail(x){
@@ -544,7 +640,9 @@ async function openDetail(x){
     ${x.labels.length?`<dt>Label</dt><dd>${x.labels.map(l=>esc(l.name)+(l.catno&&l.catno!=='none'?' – '+esc(l.catno):'')).join('<br>')}</dd>`:''}
     ${folders[x.folder]?`<dt>Folder</dt><dd>${esc(folders[x.folder])}</dd>`:''}
     ${x.added?`<dt>Added</dt><dd>${esc(new Date(x.added).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}))}</dd>`:''}
-    ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}</dl>
+    ${stars?`<dt>My rating</dt><dd style="color:var(--hot)">${stars}</dd>`:''}
+    ${plays(x.id).n?`<dt>Played in Crate</dt><dd>${plays(x.id).n} time${plays(x.id).n>1?'s':''} · last ${esc(ago(plays(x.id).last))}</dd>`:''}
+    ${notesHTML(x)}</dl>
     <div id="more"><p class="hint">Loading tracklist…</p></div>
     <a class="btn spot" data-inst="${esc(x.inst)}" style="margin-top:16px" href="${esc(spotifyURL(x))}" target="_blank" rel="noopener">${SPOTIFY_ICON}Play on Spotify</a>
     <button class="hint" data-rematch="${esc(x.inst)}" style="background:none;border:0;padding:8px 0;margin:4px 0 0;text-decoration:underline;color:var(--dim)">Wrong album? Pick a different Spotify version</button>
@@ -566,28 +664,37 @@ $('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeDetail()}
 function openFilters(){$('#fsheet').classList.add('open');$('#fsheet').setAttribute('aria-hidden','false')}
 function closeFilters(){$('#fsheet').classList.remove('open');$('#fsheet').setAttribute('aria-hidden','true');$('#filterBtn').focus({preventScroll:true})}
 function clearFilter(k){
-  const ids=k==='all'?['fGenre','fFormat','fDecade','fFolder']:[k];
+  const ids=k==='all'?['fGenre','fFormat','fDecade','fFolder','fPlayed']:[k];
   ids.forEach(id=>{$('#'+id).value=id==='sort'?'artist':''});
   apply();
 }
 $('#filterBtn').onclick=openFilters;
 $('#fDone').onclick=()=>{closeFilters();scrollTo(0,0)};
-$('#fClear').onclick=()=>{['fGenre','fFormat','fDecade','fFolder'].forEach(id=>$('#'+id).value='');$('#sort').value='artist';apply()};
+$('#fClear').onclick=()=>{['fGenre','fFormat','fDecade','fFolder','fPlayed'].forEach(id=>$('#'+id).value='');$('#sort').value='artist';apply()};
 $('#fsheet').addEventListener('click',e=>{if(e.target.id==='fsheet')closeFilters()});
 $('#chips').addEventListener('click',e=>{const b=e.target.closest('[data-clear]');if(b)clearFilter(b.dataset.clear)});
 
 /* settings */
-const ago=t=>{if(!t)return'never';const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'};
+function ago(t){if(!t)return'never';const m=Math.round((Date.now()-t)/60000);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'}
 function openSettings(){
   const c=store.get('cache')||{},S=window.CrateSpotify;
   const spOn=S&&S.connected();
   window.Crate.openSheet(`<h4>Settings</h4>
   <div class="sect"><h5>Discogs</h5><p class="sp-note">Signed in as <b style="color:var(--ink)">${esc(creds.user||'')}</b> · ${all.length} records · updated ${esc(ago(c.at))}.${creds.token?' Using your access token.':''}</p>
+  <label class="field" style="margin-top:12px"><span>${creds.token?'Personal access token (saved)':'Add a personal access token for grading, notes and value'}</span><input id="sTok" type="password" autocomplete="off" placeholder="${creds.token?'••••••••  paste a new one to replace':'From Discogs → Settings → Developers'}"></label>
+  <button class="btn ghost" id="sTokSave" style="margin-bottom:10px">Save token</button>
   <div class="row2"><button class="btn ghost" id="sFull">Reload everything</button><button class="btn ghost" id="sOut">Switch account</button></div></div>
   <div class="sect"><h5>Spotify</h5><p class="sp-note">${spOn?'Connected. Play buttons play albums right here in Crate.':'Not connected. Connect to play albums from your collection.'}</p>
   <button class="btn spot" id="sSpot">${spOn?'Spotify settings':'Connect Spotify'}</button></div>
   <button class="btn ghost" id="sClose" style="margin-top:18px">Close</button>`);
   $('#sFull').onclick=()=>{closeDetail();load(true)};
+  $('#sTokSave').onclick=async()=>{
+    const t=$('#sTok').value.trim();if(!t){toast('Paste your token first');return}
+    const old=creds.token;creds.token=t;
+    try{const me=await api('/oauth/identity');if(me.username.toLowerCase()!==String(creds.user).toLowerCase()){creds.token=old;toast('That token belongs to '+me.username);return}}
+    catch(e){creds.token=old;toast('Discogs didn’t accept that token');return}
+    store.set('creds',creds);valueMem=null;closeDetail();toast('Token saved. Reloading to fetch grading and notes…');load(true,true);
+  };
   $('#sOut').onclick=()=>{closeDetail();signOut()};
   $('#sSpot').onclick=()=>{if(S)S.open()};
   $('#sClose').onclick=closeDetail;
@@ -619,7 +726,15 @@ function signOut(){store.del('cache');store.del('creds');store.del('pos');creds=
 $('#loginForm').addEventListener('submit',e=>{e.preventDefault();creds={user:$('#user').value.trim(),token:$('#token').value.trim()};store.set('creds',creds);load(true)});
 
 /* start */
-if(creds.user||creds.token){$('#user').value=creds.user||'';const c=store.get('cache');if(c&&c.user===creds.user){all=c.items;folders=c.folders||{};boot();const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p);if(Date.now()-(c.at||0)>30*60000)setTimeout(()=>quickSync(true),1500)}else load(true)}
+if(creds.user||creds.token){
+  $('#user').value=creds.user||'';const c=store.get('cache');
+  if(c&&c.user===creds.user){
+    all=c.items;folders=c.folders||{};fields=c.fields||{};boot();
+    const p=store.get('pos');if(p!=null&&mode==='shelf')renderShelf(p);
+    if(c.v!==CACHE_V)setTimeout(()=>load(true,true),2500);
+    else if(Date.now()-(c.at||0)>30*60000)setTimeout(()=>quickSync(true),1500);
+  }else load(true);
+}
 }
 </script>
 <style>
@@ -1013,6 +1128,14 @@ function syncPlaying(){
   const uri=state?.item?.album?.uri;let id=null;
   if(uri){const cache=store.get('spAlbums')||{};for(const k in cache){if(cache[k]?.uri===uri){id=+k;break}}}
   C.markPlaying(id,!!state?.is_playing);
+  if(id&&state?.is_playing)logPlay(id);
+}
+function logPlay(id){
+  const log=store.get('plays')||[];
+  const recent=log.findLast?log.findLast(p=>p.id===id):[...log].reverse().find(p=>p.id===id);
+  if(recent&&Date.now()-recent.at<45*60000)return;
+  log.push({id,at:Date.now()});if(log.length>5000)log.splice(0,log.length-5000);
+  store.set('plays',log);
 }
 /* lock screen / control centre info */
 function mediaMeta(){

@@ -1,11 +1,11 @@
 {
-  "name": "Crate",
-  "short_name": "Crate",
+  "name": "Binflip",
+  "short_name": "Binflip",
   "description": "Flip through your Discogs record collection",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0e0f13",
+  "background_color": "#f3f1ec",
   "theme_color": "#0e0f13",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},

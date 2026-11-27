@@ -1,4 +1,4 @@
-// Crate: keeps album cover images on this device so the shelf loads fast and works on a weak signal.
+// Binflip: keeps album cover images on this device so the shelf loads fast and works on a weak signal.
 // Only images are cached; the app page itself always comes fresh from the network.
 // Discogs asks apps not to keep its content longer than needed or show it more than 6 hours out of date,
 // so covers are kept in 6-hour batches and older batches are deleted.
